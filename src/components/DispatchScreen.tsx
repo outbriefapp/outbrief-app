@@ -6,6 +6,7 @@ import {
   Image as ImageIcon,
   ImagePlus,
   Laptop,
+  Layers,
   ListTodo,
   PhoneOutgoing,
   Sparkles,
@@ -26,6 +27,7 @@ import {
   dispatchTag,
   failureMessage,
   initialPick,
+  initialWorkspace,
   loadLastPick,
   refusalMessage,
   saveLastPick,
@@ -46,7 +48,7 @@ import type {
   DispatchAttachment,
   DispatchProject,
 } from "../protocol.ts";
-import { useDispatchOptions } from "../useDispatchOptions.ts";
+import { useDispatchOptions, useListenedWorkspaces } from "../useDispatchOptions.ts";
 import { useRingtone } from "../useRingtone.ts";
 import { BackButton } from "./BackButton.tsx";
 
@@ -125,7 +127,12 @@ export function DispatchScreen(props: {
     };
   }, [daemon, callingId]);
 
-  const send = (link: DaemonLink, project: DispatchProject, agent: DispatchAgent) => {
+  const send = (
+    link: DaemonLink,
+    workspaceId: string | undefined,
+    project: DispatchProject,
+    agent: DispatchAgent,
+  ) => {
     setStage({
       name: "calling",
       agentName: agent.name,
@@ -138,7 +145,12 @@ export function DispatchScreen(props: {
     const upload = async () => {
       const attachments: DispatchAttachment[] = [];
       for (const image of images) {
-        attachments.push(await uploadDispatchImage(link, toDispatchImage(image)));
+        attachments.push(
+          await uploadDispatchImage(link, {
+            ...toDispatchImage(image),
+            ...(workspaceId ? { workspaceId } : {}),
+          }),
+        );
         setStage((s) => (s.name === "calling" ? { ...s, uploaded: attachments.length } : s));
       }
       return attachments;
@@ -146,6 +158,7 @@ export function DispatchScreen(props: {
     upload()
       .then((attachments) =>
         createDispatch(link, {
+          ...(workspaceId ? { workspaceId } : {}),
           projectId: project.id,
           agentId: agent.id,
           prompt: said.trim(),
@@ -154,7 +167,11 @@ export function DispatchScreen(props: {
       )
       .then(
         (dispatch) => {
-          saveLastPick({ projectId: project.id, agentId: agent.id });
+          saveLastPick({
+            ...(workspaceId ? { workspaceId } : {}),
+            projectId: project.id,
+            agentId: agent.id,
+          });
           setSaid("");
           for (const image of images) releaseImage(image);
           setImages([]);
@@ -310,17 +327,31 @@ function Compose(props: {
   images: PickedImage[];
   onAddImages: (images: PickedImage[]) => void;
   onRemoveImage: (image: PickedImage) => void;
-  onSend: (link: DaemonLink, project: DispatchProject, agent: DispatchAgent) => void;
+  onSend: (
+    link: DaemonLink,
+    workspaceId: string | undefined,
+    project: DispatchProject,
+    agent: DispatchAgent,
+  ) => void;
   onOpenList: () => void;
   onBack: () => void;
 }) {
   const msg = useT();
   const { daemon } = props;
-  const { options, problem } = useDispatchOptions(daemon);
+  // Several listened workspaces: the page dispatches into the picked one (the last dispatch's).
+  const workspaces = useListenedWorkspaces(daemon);
+  const [workspacePick, setWorkspacePick] = useState<string | null>(null);
+  const workspaceId =
+    workspaces.length > 1
+      ? (workspaces.find((w) => w.id === workspacePick)?.id ??
+        initialWorkspace(workspaces, loadLastPick()))
+      : undefined;
+  const workspace = workspaces.find((w) => w.id === workspaceId) ?? null;
+  const { options, problem } = useDispatchOptions(daemon, workspaceId);
   const [pick, setPick] = useState<{ projectId: string | null; agentId: string | null } | null>(
     null,
   );
-  const [picking, setPicking] = useState<"project" | "agent" | null>(null);
+  const [picking, setPicking] = useState<"workspace" | "project" | "agent" | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   // Images being read / shrunk, and why the last ones could not be added.
   const [reading, setReading] = useState(0);
@@ -403,6 +434,20 @@ function Compose(props: {
       <section className="dispatch-step">
         <div className="settings-group">
           <ul>
+            {workspace && (
+              <li>
+                <button
+                  type="button"
+                  className="settings-row"
+                  onClick={() => setPicking("workspace")}
+                >
+                  <Layers size={18} aria-hidden />
+                  <span className="settings-row-label">{msg.dispatch.workspace}</span>
+                  <span className="settings-row-value">{workspace.name}</span>
+                  <ChevronRight size={16} className="settings-row-chevron" aria-hidden />
+                </button>
+              </li>
+            )}
             <li>
               <button
                 type="button"
@@ -502,14 +547,16 @@ function Compose(props: {
             disabled={!ready}
             aria-label={msg.dispatch.send}
             title={msg.dispatch.send}
-            onClick={() => daemon && project && agent && props.onSend(daemon, project, agent)}
+            onClick={() =>
+              daemon && project && agent && props.onSend(daemon, workspaceId, project, agent)
+            }
           >
             <PhoneOutgoing size={26} aria-hidden />
           </button>
           {blocker && !offline && options && <p className="hint-line warn">{blocker}</p>}
         </div>
       </section>
-      {picking && options && (
+      {picking && (picking === "workspace" || options) && (
         <div className="dispatch-sheet-layer">
           <button
             type="button"
@@ -519,9 +566,27 @@ function Compose(props: {
           />
           <div className="dispatch-sheet">
             <p className="dispatch-step-title">
-              {picking === "project" ? msg.dispatch.pickProject : msg.dispatch.pickAgent}
+              {picking === "workspace"
+                ? msg.dispatch.pickWorkspace
+                : picking === "project"
+                  ? msg.dispatch.pickProject
+                  : msg.dispatch.pickAgent}
             </p>
-            {picking === "project" ? (
+            {picking === "workspace" ? (
+              <ChoiceList
+                items={workspaces.map((w) => ({ id: w.id, name: w.name, detail: null }))}
+                icon={<Layers size={18} aria-hidden />}
+                selected={workspaceId}
+                onPick={(id) => {
+                  if (id !== workspaceId) {
+                    setWorkspacePick(id);
+                    // Its projects and agents are picked again once they are read.
+                    setPick(null);
+                  }
+                  setPicking(null);
+                }}
+              />
+            ) : !options ? null : picking === "project" ? (
               <ChoiceList
                 items={options.projects.map((p) => ({ id: p.id, name: p.title, detail: null }))}
                 icon={<FolderGit2 size={18} aria-hidden />}

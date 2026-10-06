@@ -4,6 +4,7 @@ import {
   dispatchTag,
   failureMessage,
   initialPick,
+  initialWorkspace,
   loadLastPick,
   refusalMessage,
   saveLastPick,
@@ -35,6 +36,28 @@ beforeEach(() => {
   });
 });
 afterEach(() => vi.unstubAllGlobals());
+
+describe("the workspace the page starts with", () => {
+  const WORKSPACES = [
+    { id: "ws-1", name: "youtube-dubbing" },
+    { id: "ws-2", name: "outbrief" },
+  ];
+
+  it("is the last dispatch's while the daemon still listens to it, else the first", () => {
+    saveLastPick({ workspaceId: "ws-2", projectId: "p1", agentId: "a1" });
+    expect(loadLastPick()).toEqual({ workspaceId: "ws-2", projectId: "p1", agentId: "a1" });
+    expect(initialWorkspace(WORKSPACES, loadLastPick())).toBe("ws-2");
+    expect(
+      initialWorkspace(WORKSPACES, { workspaceId: "gone", projectId: "p", agentId: "a" }),
+    ).toBe("ws-1");
+    expect(initialWorkspace(WORKSPACES, null)).toBe("ws-1");
+  });
+
+  it("is left to the daemon when it listens to one workspace only", () => {
+    expect(initialWorkspace([WORKSPACES[0] as (typeof WORKSPACES)[0]], null)).toBeUndefined();
+    expect(initialWorkspace([], null)).toBeUndefined();
+  });
+});
 
 describe("the project and agent the page starts with", () => {
   it("are the last dispatch's while they still exist", () => {

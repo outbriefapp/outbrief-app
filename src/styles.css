@@ -1076,6 +1076,46 @@ button {
   margin: 0;
 }
 
+/* --- Multica workspaces to listen to (OUTB-55) ------------------------------------------------- */
+
+.multica-workspaces {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.multica-workspaces legend {
+  margin-bottom: 6px;
+  padding: 0;
+  color: var(--muted);
+}
+
+.settings .multica-workspaces .checkbox-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+}
+
+.multica-workspaces input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accept);
+}
+
+.multica-workspace-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .label-row {
   display: flex;
   justify-content: space-between;

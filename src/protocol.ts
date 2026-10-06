@@ -86,6 +86,8 @@ export interface BriefEnvelope {
 /** Where a `multica` report came from, and where its reply is posted. */
 export interface MulticaOrigin {
   workspaceId: string;
+  /** Set only while the daemon listens to several workspaces: the call says which one. */
+  workspaceName?: string;
   issueId: string;
   /** e.g. "YOUT-149". */
   issueIdentifier: string;
@@ -274,20 +276,34 @@ export interface DaemonBriefLanguage {
 // Multica settings are served by the outbrief-daemon (locally, or relayed sealed), not the server:
 // the user's Multica token stays on their own machine. Mirrors outbrief-daemon `src/settingsApi.ts`.
 
+/** One listened workspace's connection. */
+export interface MulticaWorkspaceStatus {
+  workspaceId: string;
+  workspaceName: string;
+  connected: boolean;
+  error: string | null;
+}
+
 /** `GET /multica/settings` status: whether this machine's Multica tasks ring right now. */
 export interface MulticaStatus {
   /** A Multica token is saved on this machine. */
   configured: boolean;
+  /** Every listened workspace is connected. */
   connected: boolean;
   /** What the user should fix; null when healthy. */
   error: string | null;
+  /** Each workspace on its own; absent from daemons that listen to one workspace only. */
+  workspaces?: MulticaWorkspaceStatus[];
 }
 
 // The token is write-only: the daemon answers with `tokenHint` and never sends the token back.
 
-/** `POST /multica/workspaces` → `MulticaWorkspacesResponse`; 422 `invalid_multica_token`. */
+/**
+ * `POST /multica/workspaces` → `MulticaWorkspacesResponse`; no token: the saved one's (daemons
+ * that listen to several workspaces). 422 `invalid_multica_token` / `multica_not_configured`.
+ */
 export interface MulticaWorkspacesInput {
-  token: string;
+  token?: string;
 }
 
 export interface MulticaWorkspace {
@@ -299,14 +315,23 @@ export interface MulticaWorkspacesResponse {
   workspaces: MulticaWorkspace[];
 }
 
-/** `PUT /multica/settings`; 422 `invalid_multica_token` / `workspace_not_found`. */
+/**
+ * `PUT /multica/settings`; 422 `invalid_multica_token` / `workspace_not_found`. `workspaceIds` is
+ * every workspace to listen to; no token keeps the saved one. Daemons that listen to one workspace
+ * only read `workspaceId` (the first) and need the token.
+ */
 export interface SaveMulticaSettingsInput {
-  token: string;
+  token?: string;
+  workspaceIds: string[];
   workspaceId: string;
 }
 
 export interface MulticaSettings {
+  /** Absent from daemons that listen to one workspace only: that is `workspaceId`. */
+  workspaces?: MulticaWorkspace[];
+  /** The first workspace. */
   workspaceId: string;
+  /** Every workspace's name. */
   workspaceName: string;
   /** e.g. "mul_…9f3a". */
   tokenHint: string;
@@ -352,7 +377,10 @@ export interface DispatchAgent {
   online: boolean;
 }
 
-/** `GET /multica/dispatch/options`. */
+/**
+ * `GET /multica/dispatch/options`: the first listened workspace's; `POST` with `{ workspaceId }`
+ * another one's.
+ */
 export interface DispatchOptions {
   projects: DispatchProject[];
   agents: DispatchAgent[];
@@ -360,6 +388,8 @@ export interface DispatchOptions {
 
 /** `POST /multica/dispatches`. */
 export interface DispatchInput {
+  /** The first listened workspace when absent. */
+  workspaceId?: string;
   projectId: string;
   agentId: string;
   /** What the user said; may be empty when images are sent. */
@@ -370,6 +400,8 @@ export interface DispatchInput {
 
 /** `POST /multica/uploads`: one image of a dispatch, uploaded to Multica by the daemon. */
 export interface DispatchImage {
+  /** The workspace it is uploaded to; the first listened one when absent. */
+  workspaceId?: string;
   name: string;
   /** `image/png`, `image/jpeg`, … */
   type: string;
