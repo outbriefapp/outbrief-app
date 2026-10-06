@@ -3,9 +3,18 @@ import QrScannerLib from "qr-scanner";
 import { useEffect, useRef, useState } from "react";
 import { useT } from "../i18n/index.ts";
 
+// Android's system WebView answers BarcodeDetector through Google Play services and kills the app
+// when the embedding app's manifest does not declare them (OUTB-54); many phones have no Play
+// services at all. The Android app decodes with qr-scanner's own worker instead, through the
+// switch the library itself flips when the native detector reports "not implemented".
+if (isTauri() && /Android/.test(navigator.userAgent)) {
+  (QrScannerLib as unknown as { _disableBarcodeDetector: boolean })._disableBarcodeDetector = true;
+}
+
 /**
  * Scans a pairing QR code with the camera (`qr-scanner`: the browser's BarcodeDetector where there
- * is one, its own decoder in a worker elsewhere). Calls `onResult` with the first code it reads.
+ * is one, except in the Android app; its own decoder in a worker elsewhere). Calls `onResult` with
+ * the first code it reads.
  */
 export function QrScanner(props: { onResult: (text: string) => void; onClose: () => void }) {
   const msg = useT();
@@ -27,10 +36,18 @@ export function QrScanner(props: { onResult: (text: string) => void; onClose: ()
       },
       { returnDetailedScanResult: true, highlightScanRegion: true, preferredCamera: "environment" },
     );
-    scanner.start().catch((err: unknown) => {
-      console.warn("[outbrief] camera", err);
-      setError(msg.account.scanUnavailable);
-    });
+    // Ask for the camera before the scanner starts: on Android the permission dialog pauses the
+    // app while qr-scanner is starting the video, and that start fails although access is granted.
+    navigator.mediaDevices
+      .getUserMedia({ video: true })
+      .then((stream) => {
+        for (const track of stream.getTracks()) track.stop();
+        if (!done) return scanner.start();
+      })
+      .catch((err: unknown) => {
+        console.warn("[outbrief] camera", err);
+        setError(msg.account.scanUnavailable);
+      });
     return () => {
       done = true;
       scanner.destroy();
