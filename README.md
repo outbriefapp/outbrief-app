@@ -1,9 +1,69 @@
 # outbrief-app
 
+[English](README.en.md)
+
 OutBrief 客户端（Tauri 2 + React 19 + TypeScript）：AI Agent 完成任务后，像微信视频来电一样响铃；接听后以语音 + 卡片汇报，可随时打字打断，挂断时回复原会话。
 
 - 服务端：[`outbrief-server`](https://github.com/outbriefapp/outbrief-server)（方案文档与 ADR 也在那里）
 - 本机常驻进程与 Agent 回调：[`outbrief-daemon`](https://github.com/outbriefapp/outbrief-daemon)
+
+## 安装顺序
+
+来电只在同一个匿名账号里转发。推荐让跑 Agent 的那台电脑上的 daemon 创建账号，桌面 App 和手机 App 都加入这个账号。
+
+1. **部署 [outbrief-server](https://github.com/outbriefapp/outbrief-server)**。只跑一个进程。私有化部署（默认）在还没有主人时，每次启动的日志里打印一次性认领码 `Claim code: XXXX-XXXX-XXXX`。记下服务地址。手机和别的电脑要能访问这个地址；`http://127.0.0.1:8787` 只有部署 server 的那台机器自己能用。给手机配对时，daemon 和 App 里填局域网 IP 或公网 `https://` 地址。
+2. **在跑 Agent 的电脑上安装 [outbrief-daemon](https://github.com/outbriefapp/outbrief-daemon)**。`pnpm install` 之后执行 `node src/cli.ts login --server <服务地址>`，输入认领码。终端打出二维码和 6 位配对码。macOS 上接着执行 `node src/cli.ts install`（开机自启，并写入 Claude Code / Codex 的 Stop hook）。`install` 把 node 和 `src/cli.ts` 的绝对路径写进 launchd，仓库留在原地。
+3. **在同一台电脑上安装桌面端**。见下一节。daemon 已经在运行时，第一次打开会自动加入这台 daemon 的账号。
+4. **安装手机端**。见下一节。打开已配对设备的「设置 → 设备 → 添加设备」，或在电脑上执行 `node src/cli.ts pair`，用手机摄像头扫二维码。
+
+本机开发想一次拉起 MySQL 容器、同级目录的 server 和桌面窗口：`pnpm dev:all`。这是开发入口。生产仍按上面的顺序部署。
+
+### 安装本仓库
+
+需要 Node ≥ 22.18、pnpm 9、Rust stable ≥ 1.85，以及 [Tauri 平台依赖](https://tauri.app/start/prerequisites/)。
+
+桌面端：
+
+```bash
+pnpm install
+pnpm tauri build
+```
+
+安装包在 `src-tauri/target/release/bundle/`（在哪台系统上打包，就产出那套安装包）。开发时热更新：
+
+```bash
+pnpm tauri dev
+```
+
+手机端用同一份代码。Android / iOS 工程不在仓库里，在本机生成后再编译。Android 需要 Android Studio，iOS 需要 Xcode，见 Tauri 文档里的移动端前提。
+
+```bash
+pnpm install
+pnpm tauri android init
+pnpm tauri android dev      # 装到设备或模拟器；发布包用 pnpm tauri android build
+pnpm tauri ios init
+pnpm tauri ios dev          # 发布包用 pnpm tauri ios build
+```
+
+仓库里没有应用商店安装包。
+
+### 配对
+
+没有登录，也没有共享口令。谁先装谁建账号，后来的设备用 6 位配对码加入。配对码 10 分钟有效、只能用一次。二维码和配对链接是 `outbrief://pair?server=<服务地址>&code=<6位>&key=obk1_…`。服务地址和端到端密钥由设备直接交给设备，server 看不到密钥。链接里的服务地址必须是新设备自己能访问的地址。
+
+| 已在账号里 | 要加入的设备 | 怎么做 |
+|---|---|---|
+| 这台电脑的 daemon 正在运行 | 同一台电脑的桌面 App | 自动。App 用本机 `~/.outbrief/local-api.key` 向 `127.0.0.1:8790` 要配对码和密钥。daemon 装了但没在运行时，欢迎页会停住，daemon 启动后自动加入 |
+| 桌面 App，或 daemon（`node src/cli.ts pair`） | 手机 App | 手机扫「设置 → 设备 → 添加设备」或终端里的二维码 |
+| 手机或另一台电脑上的 App | 一台电脑的 daemon | 在「添加设备」页复制命令，在那台电脑上执行 `node src/cli.ts login 'outbrief://pair?…'` |
+| 任意已配对设备 | 另一台电脑的桌面 App | 桌面端把配对链接贴进欢迎页。桌面端不开摄像头 |
+| 只拿到 6 位数字 | daemon 或 App | 再输入「设置 → 加密」里的同一句话（至少 12 个字符）。没设过这句话时，用带 `key=` 的二维码或配对链接 |
+
+先打开 App、由 App 创建账号也可以：欢迎页填服务地址和认领码，点「创建新账号」，再用「添加设备」里的链接在电脑上 `login`。同一台电脑上的 daemon 配对并运行之后，这台电脑的桌面 App 加入的是 daemon 所在的账号。
+
+只有手机、不装桌面 App：先部署 server，再在电脑上 `login`，用手机扫终端里的二维码。手机上的 Multica、大模型、汇报语言经 server 加密转给这台电脑的 daemon，电脑要在线。有多台电脑时，在设置页顶部选一台。
+
+公共云端把 server 的 `OUTBRIEF_OPEN_SIGNUP=true` 打开后，第一台设备直接建账号，认领码不用填。界面里的路径随「设置 → 界面语言」变化；英文界面是 Settings → Devices → Add a device，加密在 Settings → Encryption。
 
 ## 目录
 
@@ -59,6 +119,8 @@ OutBrief 客户端（Tauri 2 + React 19 + TypeScript）：AI Agent 完成任务�
 - 汇报播完后停在当前通话，可以继续提问，或挂断回复；「完成」后自动接下一个来电。
 
 ## 账号和设备
+
+安装顺序、桌面端自动加入、手机扫码见上文「安装顺序」。
 
 没有登录，也没有要填的令牌（outbrief-server ADR 0008）。账号是匿名的，只有一个 id；每台设备有自己的令牌，可以在「设置 → 设备」里逐台移除。来电只发给同一个账号的设备。
 
@@ -185,7 +247,7 @@ pnpm dev            # 只起前端（浏览器里调 UI）
 | `pnpm test` | Vitest |
 | `pnpm build` | 构建前端到 `dist/` |
 | `pnpm tauri build` | 打包桌面安装包 |
-| `pnpm tauri android init` / `ios init` | 生成移动端工程（二期） |
+| `pnpm tauri android init` / `ios init` | 生成本地 Android / iOS 工程，再 `dev` 或 `build`。见上文「安装本仓库」 |
 
 ## License
 
