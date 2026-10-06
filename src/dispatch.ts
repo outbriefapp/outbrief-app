@@ -1,14 +1,22 @@
 import type { DaemonLink } from "./daemonLink.ts";
 import { errorMessage } from "./format.ts";
 import { t } from "./i18n/index.ts";
-import type { Dispatch, DispatchAgent, DispatchOptions, DispatchProject } from "./protocol.ts";
+import type {
+  Dispatch,
+  DispatchAgent,
+  DispatchOptions,
+  DispatchProject,
+  MulticaWorkspace,
+} from "./protocol.ts";
 import { ServerError } from "./serverClient.ts";
 
 /** Where the project and agent of the last dispatch are kept on this device. */
 const LAST_PICK_KEY = "outbrief.dispatch.last";
 
-/** The project and agent picked for the last dispatch. */
+/** The workspace, project and agent picked for the last dispatch. */
 export interface LastPick {
+  /** Absent when the daemon listened to one workspace only. */
+  workspaceId?: string;
   projectId: string;
   agentId: string;
 }
@@ -17,7 +25,11 @@ export function loadLastPick(): LastPick | null {
   try {
     const value = JSON.parse(localStorage.getItem(LAST_PICK_KEY) ?? "null") as Partial<LastPick>;
     return typeof value?.projectId === "string" && typeof value.agentId === "string"
-      ? { projectId: value.projectId, agentId: value.agentId }
+      ? {
+          ...(typeof value.workspaceId === "string" ? { workspaceId: value.workspaceId } : {}),
+          projectId: value.projectId,
+          agentId: value.agentId,
+        }
       : null;
   } catch {
     return null;
@@ -26,6 +38,19 @@ export function loadLastPick(): LastPick | null {
 
 export function saveLastPick(pick: LastPick): void {
   localStorage.setItem(LAST_PICK_KEY, JSON.stringify(pick));
+}
+
+/**
+ * The workspace the page starts with: the last dispatch's while the daemon still listens to it,
+ * else the first. Undefined when it listens to one workspace only (or is an older daemon): it
+ * dispatches there by itself.
+ */
+export function initialWorkspace(
+  workspaces: MulticaWorkspace[],
+  last: LastPick | null,
+): string | undefined {
+  if (workspaces.length < 2) return undefined;
+  return (workspaces.find((w) => w.id === last?.workspaceId) ?? workspaces[0])?.id;
 }
 
 /**

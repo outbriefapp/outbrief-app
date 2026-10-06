@@ -168,6 +168,8 @@ export const en: Messages = {
     title: "Call an agent",
     mine: "My dispatches",
     project: "Project",
+    workspace: "Workspace",
+    pickWorkspace: "Pick a workspace",
     agent: "Agent",
     pickProject: "Pick a project",
     pickAgent: "Pick an agent",
@@ -539,6 +541,14 @@ export const en: Messages = {
     loading: "Loading…",
     loadFailed: (why) => `Could not load the Multica settings: ${why}`,
     workspace: "Workspace",
+    workspaces: "Workspaces to listen to",
+    workspacesHelp:
+      "Pick one or more: a finished task in any of them calls you. Dispatches go to the first by default",
+    nameSeparator: ", ",
+    changeWorkspaces: "Change workspaces",
+    saveWorkspaces: "Save workspaces",
+    oldDaemon:
+      "This computer's outbrief-daemon is too old and listens to the first workspace only. Update the daemon and save again",
     workspaceIs: (name) => `Workspace: ${name}`,
     token: "token",
     changeToken: "Change token",
