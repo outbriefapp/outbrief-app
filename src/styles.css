@@ -1,0 +1,2824 @@
+:root {
+  color-scheme: dark;
+  --bg: #0f1115;
+  --panel: #1a1d24;
+  --text: #f4f5f7;
+  --muted: #9aa1ad;
+  --accept: #07c160;
+  --decline: #fa5151;
+  --accent: #10b981;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+/* dvh, not vh: on mobile browsers vh is the tallest possible viewport, so the layout jumps when the
+   address bar collapses. dvh follows the viewport that is actually visible (YOUT-215). */
+.screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: max(1.5rem, env(safe-area-inset-top)) clamp(0.875rem, 4vw, 1.5rem)
+    max(1.5rem, env(safe-area-inset-bottom));
+}
+
+.muted {
+  color: var(--muted);
+  margin: 4px 0;
+}
+
+.link {
+  background: none;
+  border: none;
+  color: var(--muted);
+}
+
+/* The ‹ of a sub-page: just the symbol (YOUT-212). */
+.link.back {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  margin-left: -6px;
+}
+
+.idle-header,
+.call-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.idle-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.idle-title {
+  font-size: 18px;
+  margin: 16px 0 4px;
+}
+
+/* 呼叫 Agent on the idle page: the page's only action, so it is the round button under the status
+   line instead of a third phone icon in the header (YOUT-222). */
+.dispatch-cta {
+  display: grid;
+  place-items: center;
+  margin-top: clamp(1.5rem, 6dvh, 3rem);
+}
+
+.prepare-failed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+}
+
+.prepare-failed-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.prepare-failed-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.prepare-failed-text .muted {
+  margin: 0;
+}
+
+.prepare-failed-text .error {
+  color: var(--decline);
+  overflow-wrap: anywhere;
+}
+
+.prepare-failed-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.status-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.status-dot.online {
+  background: var(--accept);
+  box-shadow: 0 0 0 6px rgb(7 193 96 / 20%);
+}
+
+.status-dot.connecting {
+  background: #f5a623;
+}
+
+.status-dot.offline,
+.status-dot.unauthorized {
+  background: var(--decline);
+}
+
+.call {
+  background: radial-gradient(circle at 50% 20%, #2b3a4a 0%, #11151b 70%);
+  justify-content: space-between;
+}
+
+/* The ringing screen's block: it sits below the top of the screen, but the offset shrinks on a short
+   screen instead of pushing the accept / decline buttons down (YOUT-215). */
+.caller {
+  margin-top: clamp(1.5rem, 12dvh, 8rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.caller h1 {
+  margin: 1.25rem 0 0.25rem;
+  font-size: clamp(1.25rem, 6vw, 1.625rem);
+}
+
+.hint {
+  margin-top: 12px;
+  color: #d7dbe0;
+}
+
+/* Scales with the screen so it does not crowd the name on a 320px-wide phone (YOUT-215). */
+.avatar {
+  width: clamp(4rem, 22vw, 6rem);
+  height: clamp(4rem, 22vw, 6rem);
+  border-radius: 25%;
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.75rem, 9vw, 2.5rem);
+  font-weight: 700;
+  background: linear-gradient(160deg, var(--accept), #0f7d8c);
+}
+
+.avatar.ringing {
+  animation: ring 1.6s ease-out infinite;
+}
+
+@keyframes ring {
+  0% {
+    box-shadow: 0 0 0 0 rgb(7 193 96 / 55%);
+  }
+  100% {
+    box-shadow: 0 0 0 28px rgb(7 193 96 / 0%);
+  }
+}
+
+.queue-badge {
+  align-self: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 8%);
+  color: #d7dbe0;
+  font-size: 13px;
+}
+
+/* The two buttons keep a comfortable gap on a wide screen without spreading to the far edges, and
+   still fit side by side at 320px (YOUT-215). */
+.call-actions {
+  display: flex;
+  justify-content: space-around;
+  gap: 1rem;
+  width: 100%;
+  max-width: 22.5rem;
+  margin: 0 auto;
+  padding-bottom: 1.5rem;
+}
+
+.round {
+  flex: none;
+  width: clamp(3.5rem, 18vw, 4.25rem);
+  height: clamp(3.5rem, 18vw, 4.25rem);
+  border-radius: 50%;
+  border: none;
+  color: #fff;
+  font-size: clamp(1.375rem, 7vw, 1.75rem);
+}
+
+.round.accept {
+  background: var(--accept);
+}
+
+.round.decline {
+  background: var(--decline);
+}
+
+.timer {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.settings form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.settings input:not([type]),
+.settings input[type="password"],
+.settings select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #2c313a;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.form-actions button {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+}
+
+.form-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.form-actions button.secondary {
+  background: var(--panel);
+}
+
+/* --- Buttons shared by call, summary, history, settings ---------------------------------------- */
+
+.pill {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 14%);
+  background: rgb(255 255 255 / 8%);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.pill.primary {
+  border-color: transparent;
+  background: var(--accept);
+  color: #fff;
+}
+
+.pill.wide {
+  width: 100%;
+  padding: 12px;
+}
+
+.pill:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.row-actions,
+.inline-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.warn {
+  color: #f5a623;
+  font-size: 13px;
+}
+
+.center {
+  text-align: center;
+}
+
+.settings label.radio {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.header-links {
+  display: flex;
+  gap: 4px;
+}
+
+.icon-button {
+  position: relative;
+  display: inline-flex;
+  padding: 6px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+}
+
+.icon-button:hover {
+  background: rgb(255 255 255 / 8%);
+  color: var(--text);
+}
+
+.icon-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--decline);
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.header-spacer {
+  width: 48px;
+}
+
+.error-box {
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgb(250 81 81 / 12%);
+  color: #ffb4b4;
+}
+
+.error-box p {
+  margin: 0 0 8px;
+}
+
+/* --- Active call -------------------------------------------------------------------------------- */
+
+/* dvh so the toolbar is not pushed off screen when a mobile address bar is showing (YOUT-215,
+   the YOUT-202 regression). */
+.call.active {
+  height: 100dvh;
+  justify-content: flex-start;
+  gap: clamp(0.25rem, 1.2dvh, 0.625rem);
+  overflow: hidden;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.caller-line {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.banner {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgb(245 166 35 / 16%);
+  color: #f5c16c;
+  font-size: 13px;
+}
+
+/* The card is the only stretchy block of the call: it takes what is left, so the chat, the composer
+   and the hang-up toolbar below always stay on screen. Its floor has to cover the card's own chrome
+   (title + the card-nav dots) PLUS a couple of bullets, or a short screen squeezes it to a title and
+   an empty list — the flat 80px it used to have did exactly that on a 320×568 screen. In em so it
+   follows the user's font size; the dvh cap keeps the floor from out-growing the screen on the
+   shortest phones, where insisting on it would push the toolbar off instead (YOUT-215 / YOUT-202). */
+.brief-card {
+  flex: 1 1 auto;
+  min-height: min(11em, 26dvh);
+  display: flex;
+  flex-direction: column;
+  padding: clamp(0.75rem, 3.5vw, 1rem);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 6%);
+  overflow: hidden;
+}
+
+.brief-card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.0625rem;
+}
+
+.brief-card ul,
+.brief-card pre {
+  flex: 1;
+  margin: 0;
+  overflow: auto;
+  line-height: 1.6;
+}
+
+.brief-card ul {
+  padding-left: 20px;
+}
+
+.brief-card pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+}
+
+.card-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.nav-arrow {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgb(255 255 255 / 10%);
+  color: var(--text);
+  font-size: 18px;
+}
+
+.nav-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.dots {
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background: rgb(255 255 255 / 25%);
+}
+
+.dot.current {
+  width: 20px;
+  border-radius: 4px;
+  background: var(--accept);
+}
+
+/* Shrinks before the card does, down to about one question, and never takes more than a third of the
+   visible height. Both bounds are relative now instead of 64px mixed with vh (YOUT-215). */
+.decisions {
+  flex: 0 1 auto;
+  min-height: 4em;
+  max-height: 30dvh;
+  overflow: auto;
+  padding: 0.75rem;
+  border-radius: 0.875rem;
+  background: rgb(255 255 255 / 5%);
+}
+
+.decisions h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.decision + .decision {
+  margin-top: 10px;
+}
+
+.decision-question {
+  margin: 0 0 6px;
+}
+
+.decision-reason {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.option {
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid rgb(255 255 255 / 16%);
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.option.recommended {
+  border-color: var(--accept);
+}
+
+.option.chosen {
+  background: var(--accept);
+  border-color: var(--accept);
+  color: #fff;
+}
+
+.tag {
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: rgb(7 193 96 / 25%);
+  color: #7ee2a8;
+  font-size: 11px;
+}
+
+.option.chosen .tag {
+  background: rgb(255 255 255 / 25%);
+  color: #fff;
+}
+
+/* New messages scroll inside instead of growing the box and pushing the hang-up toolbar off screen
+   (YOUT-202). The height is a share of the visible height rather than a fixed 180px ceiling, so a
+   tall screen gets a taller chat and a short one still keeps the toolbar (YOUT-215). */
+.chat {
+  flex: 0 1 auto;
+  height: clamp(6rem, 22dvh, 16rem);
+  min-height: 3.5rem;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bubble {
+  max-width: 85%;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.bubble.user {
+  align-self: flex-end;
+  background: #95ec69;
+  color: #111;
+}
+
+.bubble.assistant {
+  align-self: flex-start;
+  background: rgb(255 255 255 / 10%);
+}
+
+.typing {
+  color: var(--muted);
+}
+
+.bubble-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  color: #ffb4b4;
+  font-size: 13px;
+}
+
+.subtitle {
+  flex: none;
+  max-height: calc(4.5em + 12px);
+  overflow: auto;
+  margin: 0;
+  padding: 6px 4px;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #fff;
+}
+
+.hint-line {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.hint-line.warn {
+  color: #f5a623;
+}
+
+.composer {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+/* Grows with the text (measured in ActiveCall) between a two-line floor and a share of the visible
+   height, so the send button and toolbar stay put (YOUT-215). */
+.composer textarea {
+  flex: 1;
+  min-height: 3.5em;
+  max-height: clamp(3.5em, 16dvh, 11rem);
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #2c313a;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.45;
+  resize: none;
+}
+
+.call-toolbar {
+  display: flex;
+  justify-content: space-around;
+}
+
+.tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 4rem;
+  border: none;
+  background: none;
+  color: #d7dbe0;
+  font-size: 12px;
+  user-select: none;
+  touch-action: none;
+}
+
+.tool:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tool-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 12%);
+  font-size: 20px;
+}
+
+.tool-icon.round {
+  font-size: 22px;
+}
+
+/* --- Summary (hang-up and history) --------------------------------------------------------------- */
+
+.summary {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+}
+
+.summary h2 {
+  margin: 8px 0 10px;
+  font-size: 18px;
+}
+
+.summary-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 0;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid rgb(255 255 255 / 15%);
+  border-top-color: var(--accept);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Takes the height the reply screen has left, with a floor of about seven lines of the user's own
+   font size instead of a flat 220px (YOUT-215). */
+.prompt-editor {
+  min-height: min(11em, 40dvh);
+  flex: 1 1 auto;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #2c313a;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.resume {
+  margin-top: 18px;
+}
+
+.resume h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.resume code {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #000;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.summary-actions {
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+/* --- History ------------------------------------------------------------------------------------ */
+
+.history-list {
+  list-style: none;
+  margin: 16px 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-row {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--text);
+  text-align: left;
+}
+
+.row-top,
+.row-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.row-top .muted {
+  margin: 0;
+  font-size: 12px;
+}
+
+.row-title {
+  margin: 4px 0 6px;
+  color: #d7dbe0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headline {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.status-tag {
+  flex-shrink: 0;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgb(255 255 255 / 10%);
+}
+
+.status-tag.completed {
+  background: rgb(7 193 96 / 20%);
+  color: #7ee2a8;
+}
+
+.status-tag.dismissed {
+  background: rgb(250 81 81 / 18%);
+  color: #ffb4b4;
+}
+
+.status-tag.acknowledged {
+  background: rgb(255 196 0 / 16%);
+  color: #ffd98a;
+}
+
+.history-meta h1 {
+  margin: 16px 0 4px;
+  font-size: 22px;
+}
+
+.verdict {
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+
+.history-transcript {
+  margin-top: 14px;
+}
+
+.history-transcript summary {
+  color: var(--muted);
+  cursor: pointer;
+}
+
+/* Replayed transcript: grows with the turns up to a share of the visible height (YOUT-215). */
+.history-transcript .chat {
+  height: auto;
+  margin-top: 0.5rem;
+  max-height: min(15rem, 45dvh);
+}
+
+.history-detail .summary {
+  margin-top: 14px;
+  overflow: visible;
+}
+
+/* --- Settings ----------------------------------------------------------------------------------- */
+
+.settings .idle-header {
+  margin-bottom: 8px;
+}
+
+.settings-group h2 {
+  margin: 16px 4px 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.settings-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.settings-group li + li {
+  border-top: 1px solid #2c313a;
+}
+
+.settings-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border: none;
+  background: none;
+  color: var(--text);
+  text-align: left;
+}
+
+.settings-row-label {
+  flex: none;
+}
+
+.settings-row-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.settings-row-chevron {
+  color: var(--muted);
+}
+
+.settings-page {
+  margin-top: 8px;
+}
+
+/* 设置 → 铃声 */
+.ringtone-hint {
+  margin: 6px 4px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ringtone-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ringtone-check {
+  flex: none;
+  color: var(--accept);
+}
+
+.ringtone-tag {
+  flex: none;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ringtone-add {
+  color: var(--accept);
+}
+
+.ringtone-more {
+  color: var(--muted);
+}
+
+/* The current tone and the search box stay on top while the long list scrolls. */
+.ringtone-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px 0 4px;
+  background: var(--bg);
+}
+
+.ringtone-current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--panel);
+  font-size: 14px;
+}
+
+.settings label.ringtone-search {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--muted);
+}
+
+.ringtone-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  outline: none;
+}
+
+.settings-group li.ringtone-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+}
+
+.ringtone-edit-row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid #2c313a;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.ringtone-edit-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accept);
+}
+
+.ringtone-remove {
+  margin-top: 10px;
+  color: var(--decline);
+}
+
+.header-edit {
+  color: var(--accept);
+  font-size: 15px;
+}
+
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-panel p {
+  margin: 0;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.label-row .value {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.settings input[type="range"] {
+  accent-color: var(--accept);
+}
+
+/* --- Project name and the calls screen (YOUT-193) ----------------------------------------------- */
+
+.project-name {
+  margin: 20px 0 0;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: rgb(16 185 129 / 16%);
+  color: #7ee2c4;
+  font-size: 14px;
+}
+
+.project-name + h1 {
+  margin-top: 8px;
+}
+
+.history-meta .project-name {
+  display: inline-block;
+  margin-top: 16px;
+}
+
+.project-tag {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: rgb(16 185 129 / 16%);
+  color: #7ee2c4;
+  font-size: 12px;
+  vertical-align: 1px;
+}
+
+/* One row of tabs. A mouse gets the 更多 menu for tabs that do not fit; a touch screen scrolls the
+   row with a finger (.scroll). */
+.project-tabs {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.project-tabs.scroll {
+  overflow-x: auto;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.project-tabs.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.project-tabs-measure {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.project-tabs-measure > div {
+  display: flex;
+  gap: 6px;
+  width: max-content;
+}
+
+.project-tab {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.project-tab.current {
+  border-color: transparent;
+  background: var(--accept);
+  color: #fff;
+}
+
+/* A long project name is clipped, but never wider than half a 320px screen (YOUT-215). */
+.tab-label {
+  max-width: min(10rem, 45vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.count {
+  margin-left: 6px;
+  opacity: 0.75;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.project-tab .count {
+  margin-left: 0;
+}
+
+.count.missed {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--decline);
+  color: #fff;
+  opacity: 1;
+  text-align: center;
+}
+
+.more-tabs {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.more-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-width: min(12.5rem, 70vw);
+  max-height: 50dvh;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid #2c313a;
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+}
+
+.more-menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+}
+
+.more-menu-item:hover {
+  background: rgb(255 255 255 / 8%);
+}
+
+/* Missed calls on top, grouped by project under 全部; past calls below (YOUT-210). */
+.calls-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.calls-section h2 .count {
+  margin-left: 0;
+}
+
+.calls-section h2 .acknowledge-all {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.call-time {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.project-group h3 {
+  margin: 14px 4px -8px;
+  color: #7ee2c4;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.calls-section > .history-list {
+  margin-top: 10px;
+}
+
+.missed-row {
+  box-shadow: inset 3px 0 0 var(--decline);
+}
+
+.missed-row:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.answer-chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accept);
+  color: #fff;
+  font-size: 12px;
+}
+
+.row-caller {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.priority-tag {
+  flex-shrink: 0;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: rgb(255 255 255 / 10%);
+}
+
+.priority-tag.urgent {
+  background: rgb(250 81 81 / 22%);
+  color: #ffb4b4;
+}
+
+.priority-tag.high {
+  background: rgb(245 166 35 / 22%);
+  color: #ffd28a;
+}
+
+/* --- 模式（YOUT-192） ------------------------------------------------------------------------- */
+
+/* Today's mode: a chip in the idle screen's header opening a menu (YOUT-210). */
+.mode-menu {
+  position: relative;
+}
+
+.mode-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(13.75rem, 45vw);
+  padding: 5px 10px;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.mode-chip:hover {
+  background: rgb(255 255 255 / 8%);
+}
+
+.mode-chip.silent {
+  border-color: rgb(245 166 35 / 40%);
+  background: rgb(245 166 35 / 12%);
+  color: #ffd28a;
+}
+
+.mode-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mode-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  width: min(17.5rem, calc(100vw - 2.5rem));
+  padding: 6px;
+  border: 1px solid #2c313a;
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+}
+
+.mode-state {
+  margin: 6px 10px 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.mode-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  text-align: left;
+}
+
+.mode-choice:hover,
+.mode-manage:hover {
+  background: rgb(255 255 255 / 8%);
+}
+
+.mode-choice-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+.mode-choice-hint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mode-check {
+  color: var(--accept);
+}
+
+.mode-manage {
+  margin-top: 4px;
+  padding: 10px;
+  border: none;
+  border-top: 1px solid #2c313a;
+  border-radius: 0 0 8px 8px;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: left;
+}
+
+.link.danger {
+  color: #ff6b6b;
+}
+
+/* --- 设置 → 模式：像闹钟一样的列表和编辑页（YOUT-205） ------------------------------------------- */
+
+.header-add {
+  width: 48px;
+  padding: 0;
+  color: var(--accept);
+  font-size: 28px;
+  line-height: 1;
+  text-align: right;
+}
+
+.header-save {
+  width: 48px;
+  padding: 0;
+  color: var(--accept);
+  font-weight: 600;
+  text-align: right;
+}
+
+.mode-status {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 8px 0 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgb(7 193 96 / 12%);
+  color: #8ee6b8;
+  font-size: 13px;
+}
+
+.mode-status.quiet {
+  background: rgb(245 166 35 / 12%);
+  color: #ffd28a;
+}
+
+.mode-status-name {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.mode-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.mode-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 14px;
+}
+
+.mode-row + .mode-row {
+  border-top: 1px solid #2c313a;
+}
+
+.mode-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 14px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  text-align: left;
+}
+
+.mode-row.on .mode-item {
+  color: var(--text);
+}
+
+.mode-item-time {
+  font-size: 34px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+}
+
+.mode-item-time.many {
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.mode-item-meta {
+  font-size: 14px;
+}
+
+.mode-empty {
+  padding: 24px 0;
+  text-align: center;
+}
+
+.mode-footnote {
+  margin-top: 10px;
+  padding: 0 4px;
+  font-size: 13px;
+}
+
+.switch {
+  flex: none;
+  position: relative;
+  width: 51px;
+  height: 31px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: #3a3f4a;
+  transition: background 0.2s;
+}
+
+.switch[aria-checked="true"] {
+  background: var(--accept);
+}
+
+.switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 30%);
+  transition: transform 0.2s;
+}
+
+.switch[aria-checked="true"] .switch-knob {
+  transform: translateX(20px);
+}
+
+.mode-editor {
+  gap: 18px;
+}
+
+.range-list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.range-list > .pill {
+  align-self: flex-start;
+}
+
+.range-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.range-ends {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.range-dash {
+  color: var(--muted);
+  font-size: 22px;
+}
+
+.range-end {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 5%);
+  color: var(--text);
+}
+
+.range-end.current {
+  border-color: var(--accept);
+  background: rgb(7 193 96 / 12%);
+}
+
+.range-end-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.range-end-time {
+  font-size: 28px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+}
+
+.range-end.current .range-end-time {
+  color: var(--accept);
+}
+
+.range-remove {
+  align-self: center;
+  font-size: 13px;
+}
+
+/* The picker is centred; on a 320px screen it gives up width instead of overflowing (YOUT-215). */
+.time-wheel {
+  position: relative;
+  width: min(12.5rem, 70%);
+  margin: 0 auto;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  user-select: none;
+}
+
+/* The picker's own hairlines are light grey; a soft band reads better on the dark theme. */
+.time-wheel::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 40px;
+  margin-top: -20px;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 8%);
+  pointer-events: none;
+}
+
+.time-wheel > div > div:last-child {
+  display: none;
+}
+
+.wheel-selected {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.wheel-colon {
+  align-self: center;
+  color: var(--text);
+}
+
+.repeat-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-label {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 4px;
+  font-size: 14px;
+}
+
+.repeat-section p {
+  margin: 0 4px;
+  font-size: 13px;
+}
+
+.day-picker {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.day-picker button {
+  flex: 1;
+  aspect-ratio: 1;
+  max-width: 44px;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.day-picker button.current {
+  border-color: transparent;
+  background: var(--accept);
+  color: #fff;
+  font-weight: 600;
+}
+
+.mode-notice {
+  margin: 10px 4px 0;
+}
+
+.rule-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rule-section p {
+  margin: 0 4px;
+  font-size: 13px;
+}
+
+.segmented {
+  display: flex;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.settings .segmented label {
+  flex: 1;
+  flex-direction: row;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.settings .segmented label.current {
+  background: #3a3f4a;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.editor-group {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.settings .editor-group label.settings-row {
+  flex-direction: row;
+  color: var(--text);
+}
+
+.settings input.row-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: right;
+  outline: none;
+}
+
+.delete-mode {
+  padding: 13px;
+  border: none;
+  border-radius: 12px;
+  background: var(--panel);
+  color: #ff6b6b;
+}
+
+/* --- 设置 → 大模型 (YOUT-190) ------------------------------------------------------------------ */
+
+.llm-settings .field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.llm-settings .field-label {
+  color: var(--muted);
+}
+
+.llm-settings .field-hint {
+  margin: 0;
+  font-size: 13px;
+}
+
+.llm-settings label > .muted {
+  font-size: 13px;
+}
+
+.provider-picker {
+  position: relative;
+}
+
+.provider-current {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #2c313a;
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  text-align: left;
+}
+
+.provider-current:hover {
+  border-color: #3a414d;
+}
+
+.provider-current svg {
+  flex: none;
+  color: var(--muted);
+}
+
+.provider-name {
+  flex: none;
+  font-weight: 500;
+}
+
+.provider-host {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  text-align: right;
+}
+
+/* Long lists scroll inside; the cap follows the visible height so a short window still shows the
+   page behind the menu (YOUT-215). */
+.provider-menu {
+  max-height: min(21.25rem, 60dvh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.provider-menu ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.settings .provider-menu .provider-filter {
+  margin: 2px 2px 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.input-with-button,
+.model-picker {
+  position: relative;
+  display: flex;
+}
+
+.settings .input-with-button input,
+.settings .model-picker input {
+  flex: 1;
+  min-width: 0;
+  padding-right: 40px;
+}
+
+.icon-inside {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  padding: 6px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+}
+
+.icon-inside:hover {
+  color: var(--text);
+  background: rgb(255 255 255 / 6%);
+}
+
+.model-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.model-row .model-picker {
+  flex: 1;
+  min-width: 0;
+}
+
+.icon-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  border-radius: 10px;
+}
+
+.model-menu {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: min(16.25rem, 50dvh);
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid #2c313a;
+  border-radius: 10px;
+  background: #20242c;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
+}
+
+.model-menu button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  text-align: left;
+}
+
+.model-menu button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-menu button:hover,
+.model-menu button.selected {
+  background: rgb(255 255 255 / 7%);
+}
+
+.model-menu button.selected {
+  color: #7ee2c4;
+}
+
+.model-group {
+  padding: 8px 10px 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.model-empty {
+  padding: 8px 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.test-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.test-result {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.test-result svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.test-result.partial {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.test-line {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.test-detail {
+  color: var(--muted);
+  font-size: 12px;
+  word-break: break-word;
+}
+
+.pill.small-pill {
+  padding: 5px 12px;
+  font-size: 13px;
+}
+
+.segmented {
+  display: flex;
+  padding: 3px;
+  border: 1px solid #2c313a;
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.segmented button {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.segmented button.selected {
+  background: rgb(16 185 129 / 16%);
+  color: #7ee2c4;
+}
+
+.test-result.ok {
+  color: #34d399;
+}
+
+.test-result.partial {
+  color: #f5a623;
+}
+
+.test-result.failed {
+  color: #fa7a7a;
+  word-break: break-word;
+}
+
+.notice {
+  color: #7ee2c4;
+  font-size: 13px;
+}
+
+.form-actions .push-left {
+  margin-right: auto;
+}
+
+.form-actions button.danger {
+  color: #fa7a7a;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+.key-saved {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 12px;
+  border: 1px solid #2c313a;
+  border-radius: 10px;
+  background: var(--panel);
+  color: #7ee2c4;
+}
+
+.key-saved .mono {
+  flex: 1;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.key-saved .pill {
+  flex: none;
+}
+
+.link.inline-link {
+  align-self: flex-start;
+  padding: 0;
+  color: #7ee2c4;
+  font-size: 13px;
+}
+
+.llm-settings .field > .muted {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* After .model-menu so the provider rows keep the UI font. */
+.model-menu.provider-menu button {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+/* --- 设置 → 语音：平台、音色、自定义 HTTP 请求 (YOUT-191) -------------------------------------- */
+
+.doc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.doc-link:hover {
+  color: #7ee2c4;
+}
+
+/* Voice ids are long; the name leads and the id follows in a muted monospace line. */
+.option-named {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.option-named .option-id {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.request-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px 12px;
+  border: 1px solid #2c313a;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 2%);
+}
+
+.request-editor h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.request-editor .field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.request-editor .field-label {
+  color: var(--muted);
+}
+
+.request-editor .field-hint {
+  margin: 0;
+  font-size: 13px;
+}
+
+.settings .curl-input,
+.settings .body-input {
+  padding: 10px 12px;
+  border: 1px solid #2c313a;
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+/* The method sits next to the URL so the row still fits a narrow window. */
+.method-row {
+  display: flex;
+  gap: 8px;
+}
+
+.settings .method-row select {
+  flex: none;
+  width: 92px;
+}
+
+.settings .method-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.request-editor .header-list li {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.settings .header-list input {
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+.settings .header-list .header-name {
+  flex: 0 1 38%;
+}
+
+.settings .header-list .header-value {
+  flex: 1 1 62%;
+}
+
+.icon-button {
+  flex: none;
+  display: inline-flex;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+}
+
+.icon-button:hover {
+  color: #fa7a7a;
+  background: rgb(255 255 255 / 6%);
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip-row .pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.chip-row code {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.chip-row .pill.selected {
+  border-color: #34d399;
+  background: rgb(16 185 129 / 16%);
+  color: #7ee2c4;
+}
+
+.chip-row .pill.selected code {
+  color: #7ee2c4;
+}
+
+/* The pasted request, read-only: re-paste a curl example to change it. */
+.request-preview {
+  overflow-x: auto;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #2c313a;
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* --- 宽屏通话页：通话界面 + 汇报原文（YOUT-215）--------------------------------------------------
+
+   一套界面三档宽度，断点是 Material 3 的 window size class，判定写在 src/layout.ts，这里只负责摆：
+   - compact（< 600，普通手机、折叠屏外屏、默认 420px 的桌面窗口）：单栏，和改动前完全一样
+   - medium（600–839，折叠屏内屏 781px）：左右对半，正好一块屏一栏，折痕落在两栏之间
+   - expanded（≥ 840，拉宽的 PC 窗口）：左栏钉在手机宽度，多出来的都给原文 —— 窗口能拉到 1400px
+     以上，左栏跟着变宽只会让卡片一行太长反而更难读；原文是整段文字，给它宽度才有意义
+
+   左栏是折起时那一整套通话界面原封不动（标题、卡片、聊天、输入框、暂停 / 挂断），挂断栏留在左栏
+   底部不横跨两块屏。 */
+
+.call-wide.compact {
+  display: flex;
+}
+
+.call-wide.medium,
+.call-wide.expanded {
+  display: grid;
+  gap: clamp(0.75rem, 2vw, 1.125rem);
+  align-items: stretch;
+}
+
+.call-wide.medium {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* 左栏定宽区间的下限和 Tauri 的最小窗口宽度（360px）同一量级，上限略宽于默认窗口 420px。 */
+.call-wide.expanded {
+  grid-template-columns: minmax(23.75rem, 27.5rem) minmax(0, 1fr);
+}
+
+/* 折痕落在两栏之间：真机上位置由 W3C Viewport Segments 给，不猜屏幕中线。两段横向分屏时按段宽
+   分列，这样右栏正好是第二块屏。不支持这个媒体查询的浏览器保持上面的对半。 */
+@media (horizontal-viewport-segments: 2) {
+  .call-wide.medium,
+  .call-wide.expanded {
+    grid-template-columns: env(viewport-segment-width 0 0) minmax(0, 1fr);
+  }
+}
+
+/* 左栏：原来那套通话界面纵向堆着，卡片吃掉剩余高度。单栏时它就是整个界面。 */
+/* 纵向 gap 在矮屏上收窄：320×568 这种屏上 7 个子块之间的 6 道 10px 缝就是 60px，够卡片多两行
+   bullets，也够挂断栏留在屏幕里（YOUT-215 / YOUT-202）。 */
+.call-stage {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.25rem, 1.2dvh, 0.625rem);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.call-wide.compact > .call-stage {
+  flex: 1 1 auto;
+}
+
+/* 两栏下聊天区从单栏的 22dvh 天花板里放宽一些，但仍然不抢卡片的高度：卡片才是通话的主体，
+   它是唯一会长的块（`.brief-card` 的 flex: 1 1 0）。聊天让 22dvh → 30dvh 就够，再多会把卡片
+   压到只剩标题，bullets 一行都看不见。 */
+.call-wide.medium .call-stage .chat,
+.call-wide.expanded .call-stage .chat {
+  flex: 0 1 auto;
+  height: clamp(6rem, 30dvh, 20rem);
+}
+
+/* 右栏：汇报原文。自己滚，原文长不会把左栏顶走。 */
+.raw-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: clamp(0.625rem, 1.5vw, 0.875rem);
+  border-radius: 0.875rem;
+  background: rgb(255 255 255 / 4%);
+}
+
+.pane-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.raw-body {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+/* --- Accounts and devices (YOUT-217) ------------------------------------------------------------ */
+
+.welcome .settings-group {
+  margin-top: 24px;
+}
+
+.device-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.device-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.device-row + .device-row {
+  border-top: 1px solid #2c313a;
+}
+
+.device-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.device-meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.device-tag {
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: rgb(16 185 129 / 16%);
+  color: #7ee2c4;
+  font-size: 12px;
+}
+
+.device-list button.danger {
+  color: #fa7a7a;
+}
+
+.qr-image {
+  display: block;
+  width: min(280px, 70vw);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.pairing-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.pairing-code strong {
+  font-size: 32px;
+  letter-spacing: 0.12em;
+}
+
+.pairing-command {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--panel);
+  font-size: 12px;
+  word-break: break-all;
+  user-select: all;
+}
+
+.qr-scanner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.qr-scanner video {
+  width: 100%;
+  max-height: 50vh;
+  border-radius: 12px;
+  background: #000;
+  object-fit: cover;
+}
+
+.scan-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.daemon-target {
+  margin: 0 0 12px;
+}
+
+/* --- 呼叫 Agent：主动派单（YOUT-222） -------------------------------------------------------------- */
+
+.dispatch {
+  gap: 12px;
+}
+
+.dispatch-machine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.dispatch-machine.online {
+  color: #7ee2a8;
+}
+
+.dispatch-machine.offline {
+  color: #ffb4b4;
+}
+
+.dispatch-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dispatch-step-title {
+  margin: 0 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.dispatch-step-title .link {
+  padding: 0;
+  color: #7ee2c4;
+  font-size: 13px;
+}
+
+.dispatch-choice {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dispatch-choice-detail {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dispatch-say {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dispatch-say textarea {
+  width: 100%;
+  min-height: 9em;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #2c313a;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  resize: none;
+}
+
+.dispatch-say .hint-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.dispatch-send {
+  align-self: center;
+  display: grid;
+  place-items: center;
+  margin-top: 6px;
+}
+
+.dispatch-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dispatch-sheet-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+}
+
+.dispatch-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgb(0 0 0 / 50%);
+}
+
+.dispatch-sheet {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px clamp(0.875rem, 4vw, 1.5rem) max(1.5rem, env(safe-area-inset-bottom));
+  border-radius: 16px 16px 0 0;
+  background: var(--bg);
+}
+
+.dispatch-calling {
+  justify-content: space-between;
+}
+
+.dispatch-calling-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 1.5rem;
+}
+
+.dispatch-calling-actions .round {
+  display: grid;
+  place-items: center;
+}
+
+.dispatch-sent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: clamp(1rem, 6dvh, 3rem);
+}
+
+.dispatch-sent .idle-title {
+  margin-bottom: 0;
+}
+
+.dispatch-sent-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgb(7 193 96 / 20%);
+  color: #7ee2a8;
+}
+
+.dispatch-card {
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--panel);
+  text-align: left;
+}
+
+.dispatch-card-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.dispatch-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dispatch-card-top .status-tag {
+  margin-left: auto;
+}
+
+.dispatch-card-title {
+  margin: 8px 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.dispatch-smart {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #7ee2c4;
+  font-weight: 400;
+}
+
+.dispatch-said {
+  margin: 8px 0 0;
+  color: #d7dbe0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dispatch-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dispatch-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dispatch-list .dispatch-card {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.dispatch-sent-icon.failed {
+  background: rgb(250 81 81 / 18%);
+  color: #ffb4b4;
+}
+
+.dispatch-card-top .status-tag.created {
+  background: rgb(7 193 96 / 20%);
+  color: #7ee2a8;
+}
+
+.dispatch-card-top .status-tag.failed {
+  background: rgb(250 81 81 / 18%);
+  color: #ffb4b4;
+}
+
+/* 呼叫 Agent 附图（YOUT-226）：缩略图一行排开，最后一格是「添加图片」 */
+.dispatch-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dispatch-image {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid #2c313a;
+}
+
+.dispatch-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.dispatch-image.add {
+  display: grid;
+  place-items: center;
+  border-style: dashed;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.dispatch-image.add:hover {
+  color: var(--text);
+}
+
+.dispatch-image.reading {
+  animation: dispatch-image-pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes dispatch-image-pulse {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dispatch-image-remove {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  cursor: pointer;
+}
+
+.dispatch-card-images {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}

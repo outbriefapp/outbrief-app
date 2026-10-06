@@ -1,0 +1,4 @@
+/* 打包后的 App 在中文系统里的名字（Dock、Finder、菜单栏） */
+CFBundleName = "启奏";
+CFBundleDisplayName = "启奏";
+NSMicrophoneUsageDescription = "启奏需要使用麦克风，让你在通话中按住说话向 Agent 提问。";

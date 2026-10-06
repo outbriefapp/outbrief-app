@@ -1,0 +1,32 @@
+[package]
+name = "outbrief-app"
+version = "0.0.1"
+description = "OutBrief — agent reports as a phone call"
+edition = "2021"
+rust-version = "1.85"
+
+[lib]
+# staticlib/cdylib are required by the iOS/Android targets.
+name = "outbrief_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-http = "2"
+serde = { version = "1", features = ["derive"] }
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-autostart = "2"
+tauri-plugin-single-instance = "2"
+
+# WebKitGTK handle for granting microphone permission (already a Tauri dependency on Linux).
+[target.'cfg(target_os = "linux")'.dependencies]
+webkit2gtk = { version = "2", features = ["v2_8"] }
+
+# macOS: rename the app menu in the menu bar (it shows the bundle's CFBundleName) with the UI language.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = "0.3"

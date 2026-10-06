@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Finder / Dock show the name from <lang>.lproj/InfoPlist.strings: 启奏 on a Chinese system -->
+  <key>LSHasLocalizedDisplayName</key>
+  <true/>
+  <key>CFBundleDisplayName</key>
+  <string>OutBrief</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>OutBrief 需要使用麦克风，让你在通话中按住说话向 Agent 提问。</string>
+</dict>
+</plist>

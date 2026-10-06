@@ -1,0 +1,4 @@
+/* The bundled app's name on an English system (Dock, Finder, menu bar) */
+CFBundleName = "OutBrief";
+CFBundleDisplayName = "OutBrief";
+NSMicrophoneUsageDescription = "OutBrief uses the microphone so you can hold to talk and ask the agent during a call.";
