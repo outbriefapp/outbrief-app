@@ -1,6 +1,7 @@
 import { Laptop, Smartphone } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { AccountPatch } from "../account.ts";
+import { confirmAction } from "../confirm.ts";
 import { errorMessage, formatDateTime } from "../format.ts";
 import { useT } from "../i18n/index.ts";
 import { formatPairingCode, pairingLink } from "../pairing.ts";
@@ -59,7 +60,7 @@ export function DevicesPage(props: {
 
   async function remove(device: Device) {
     const question = device.current ? m.leaveConfirm : m.removeConfirm(device.name);
-    if (!window.confirm(question)) return;
+    if (!(await confirmAction(question))) return;
     try {
       await removeDevice(server, device.id);
       if (device.current) props.onLeft();

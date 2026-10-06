@@ -1,5 +1,6 @@
 import { Check, ChevronRight, Play, Plus, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { confirmAction } from "../confirm.ts";
 import { errorMessage } from "../format.ts";
 import { type Messages, useT } from "../i18n/index.ts";
 import { deleteRingtoneAudio, saveRingtoneAudio } from "../ringtoneStore.ts";
@@ -168,7 +169,7 @@ function RingtonePicker(props: {
       .finally(() => setAdding(false));
   };
 
-  const removeChecked = () => {
+  const removeChecked = async () => {
     const ids = checked;
     if (!ids.length) return;
     const notes = RING_PURPOSES.filter((p) => ids.includes(ringtones[p])).map((p) =>
@@ -178,7 +179,7 @@ function RingtonePicker(props: {
         ringtoneLabel(DEFAULT_RINGTONES[p], customRingtones, msg),
       ),
     );
-    if (notes.length && !window.confirm(m.confirmRemove(notes))) return;
+    if (notes.length && !(await confirmAction(m.confirmRemove(notes)))) return;
     setProblem(null);
     stopPreview.current?.();
     Promise.all(ids.map(deleteRingtoneAudio)).then(
@@ -360,7 +361,7 @@ function RingtonePicker(props: {
             type="button"
             className="pill wide ringtone-remove"
             disabled={!checked.length}
-            onClick={removeChecked}
+            onClick={() => void removeChecked()}
           >
             {m.removeSelected(checked.length)}
           </button>

@@ -37,6 +37,7 @@ export const en: Messages = {
     back: "Back",
     toSettings: "Back to Settings",
     cancel: "Cancel",
+    confirm: "OK",
     save: "Save",
     retry: "Retry",
     ignore: "Ignore",

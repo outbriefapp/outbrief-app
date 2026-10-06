@@ -41,6 +41,7 @@ export const zh = {
     back: "返回",
     toSettings: "返回设置",
     cancel: "取消",
+    confirm: "确定",
     save: "保存",
     retry: "重试",
     ignore: "忽略",

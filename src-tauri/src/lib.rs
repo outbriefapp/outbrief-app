@@ -16,6 +16,8 @@ pub fn run() {
     // In-call Q&A calls the user's OpenAI-compatible endpoint, which sends no CORS headers to
     // the webview; the plugin's fetch goes through Rust instead (scope in capabilities/default.json).
     let builder = builder.plugin(tauri_plugin_http::init());
+    // The webview shows no window.confirm: destructive actions ask through the native dialog.
+    let builder = builder.plugin(tauri_plugin_dialog::init());
     #[cfg(desktop)]
     let builder = desktop::configure(builder);
     #[cfg(mobile)]
