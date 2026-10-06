@@ -19,9 +19,13 @@ export function callerName(e: AgentEvent): string {
   return e.source === "generic" ? t().event.genericSource : SOURCE_LABEL[e.source];
 }
 
-/** The Multica project the call is about; null for local agents and issues in no project. */
+/**
+ * The Multica project the call is about, after its workspace when the daemon listens to several;
+ * null for local agents and issues in no project (and no workspace name).
+ */
 export function projectName(e: AgentEvent): string | null {
-  return e.multica?.projectTitle ?? null;
+  const parts = [e.multica?.workspaceName, e.multica?.projectTitle].filter(Boolean);
+  return parts.length ? parts.join(" · ") : null;
 }
 
 export function callerSubtitle(e: AgentEvent): string {

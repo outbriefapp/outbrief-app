@@ -180,12 +180,15 @@ export function fetchMulticaSettings(
   return daemonCall(link, "GET", "/multica/settings", undefined, signal);
 }
 
-/** Workspaces a token can reach; 422 `invalid_multica_token` when Multica rejects it. */
+/**
+ * Workspaces a token (the saved one when none is given) can reach; 422 `invalid_multica_token`
+ * when Multica rejects it.
+ */
 export async function listMulticaWorkspaces(
   link: DaemonLink,
-  token: string,
+  token?: string,
 ): Promise<MulticaWorkspace[]> {
-  const body: MulticaWorkspacesInput = { token };
+  const body: MulticaWorkspacesInput = token ? { token } : {};
   return (
     await daemonCall<{ workspaces: MulticaWorkspace[] }>(link, "POST", "/multica/workspaces", body)
   ).workspaces;
@@ -217,12 +220,18 @@ export async function fetchMulticaIssues(
 
 // --- 主动派单 (outbrief-daemon `src/multica/dispatch.ts`) ----------------------------------------
 
-/** Projects and agents to dispatch to, with whether each agent's machine is online. */
+/**
+ * Projects and agents to dispatch to in `workspaceId` (the first listened workspace when absent),
+ * with whether each agent's machine is online.
+ */
 export function fetchDispatchOptions(
   link: DaemonLink,
+  workspaceId?: string,
   signal?: AbortSignal,
 ): Promise<DispatchOptions> {
-  return daemonCall(link, "GET", "/multica/dispatch/options", undefined, signal);
+  return workspaceId
+    ? daemonCall(link, "POST", "/multica/dispatch/options", { workspaceId }, signal)
+    : daemonCall(link, "GET", "/multica/dispatch/options", undefined, signal);
 }
 
 /**

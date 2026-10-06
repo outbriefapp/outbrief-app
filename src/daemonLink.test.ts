@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { daemonCall, fetchMulticaSettings, saveDaemonLlm } from "./daemonLink.ts";
+import {
+  daemonCall,
+  fetchDispatchOptions,
+  fetchMulticaSettings,
+  listMulticaWorkspaces,
+  saveDaemonLlm,
+} from "./daemonLink.ts";
 import {
   type E2eKey,
   importKey,
@@ -124,6 +130,37 @@ describe("the daemon on this machine", () => {
     await daemonCall({ kind: "local", localKey: "obl_local" }, "DELETE", "/multica/settings");
     expect(calls).toEqual([
       { url: "http://127.0.0.1:8790/multica/settings", auth: "Bearer obl_local" },
+    ]);
+  });
+});
+
+describe("several Multica workspaces", () => {
+  it("reads another workspace's dispatch options by id, the first one's without", async () => {
+    const calls: { method: string; url: string; body: unknown }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: URL, init: RequestInit) => {
+        calls.push({
+          method: init.method ?? "GET",
+          url: String(url),
+          body: init.body ? JSON.parse(String(init.body)) : undefined,
+        });
+        return Response.json({ projects: [], agents: [], workspaces: [] });
+      }),
+    );
+    const local = { kind: "local", localKey: "k" } as const;
+    await fetchDispatchOptions(local);
+    await fetchDispatchOptions(local, "ws-2");
+    await listMulticaWorkspaces(local);
+    expect(calls).toEqual([
+      { method: "GET", url: "http://127.0.0.1:8790/multica/dispatch/options", body: undefined },
+      {
+        method: "POST",
+        url: "http://127.0.0.1:8790/multica/dispatch/options",
+        body: { workspaceId: "ws-2" },
+      },
+      // No token: the daemon lists the saved one's workspaces.
+      { method: "POST", url: "http://127.0.0.1:8790/multica/workspaces", body: {} },
     ]);
   });
 });
