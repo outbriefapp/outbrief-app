@@ -44,6 +44,7 @@ The phone app is this same project. The Android and iOS projects are not checked
 ```bash
 pnpm install
 pnpm tauri android init
+pnpm tauri icon app-icon.json   # init writes Tauri's default icons; this swaps in OutBrief's
 pnpm tauri android dev      # device or emulator; scripts/build-android.sh for an installable APK
 pnpm tauri ios init
 pnpm tauri ios dev          # pnpm tauri ios build for a release

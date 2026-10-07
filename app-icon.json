@@ -1,0 +1,5 @@
+{
+  "default": "app-icon.png",
+  "android_bg": "app-icon-android-bg.svg",
+  "android_fg": "app-icon-android-fg.svg"
+}

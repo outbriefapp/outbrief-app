@@ -26,6 +26,8 @@ rustup target add aarch64-linux-android >/dev/null
 
 GEN=src-tauri/gen/android
 [ -d "$GEN" ] || pnpm tauri android init --ci
+# init 只写入 Tauri 默认图标；每次按 app-icon.json 重新生成，和桌面端保持一致
+pnpm tauri icon app-icon.json >/dev/null
 
 # 扫码加入账号（qr-scanner）和录音要相机 / 麦克风；WebView 申请时由 wry 弹系统授权
 MANIFEST="$GEN/app/src/main/AndroidManifest.xml"

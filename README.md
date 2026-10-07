@@ -40,6 +40,7 @@ pnpm tauri dev
 ```bash
 pnpm install
 pnpm tauri android init
+pnpm tauri icon app-icon.json   # init 只写入 Tauri 默认图标，这一步换成 OutBrief 图标
 pnpm tauri android dev      # 装到设备或模拟器；安装包用 scripts/build-android.sh（见「Android 安装包」）
 pnpm tauri ios init
 pnpm tauri ios dev          # 发布包用 pnpm tauri ios build
@@ -208,7 +209,7 @@ pnpm tauri ios dev          # 发布包用 pnpm tauri ios build
 
 ## 图标
 
-中文名「启奏」（有本启奏，无本退朝）：朱红底上一本展开的金边奏折，折页上的竖行字写成声波——Agent 上奏，用语音汇报。源文件是 `app-icon.svg`；改图后导出 1024×1024 的 `app-icon.png`，再运行 `pnpm tauri icon app-icon.png` 重新生成 `src-tauri/icons/` 下所有尺寸。
+中文名「启奏」（有本启奏，无本退朝）：朱红底上一本展开的金边奏折，折页上的竖行字写成声波——Agent 上奏，用语音汇报。源文件是 `app-icon.svg`；改图后导出 1024×1024 的 `app-icon.png`，再运行 `pnpm tauri icon app-icon.json` 重新生成 `src-tauri/icons/` 下所有尺寸（本机已有 Android 工程时也会一并写入）。Android 自适应图标拆成两层：`app-icon-android-bg.svg` 是满铺的朱红底，`app-icon-android-fg.svg` 是缩进安全区的奏折，由 `app-icon.json` 指定；改了 `app-icon.svg` 的配色或图形，这两个文件要同步改。
 
 ## 桌面端
 
@@ -255,7 +256,7 @@ pnpm dev            # 只起前端（浏览器里调 UI）
 `scripts/build-android.sh` 打一个 arm64 的 release APK，直接装到手机上试用（不上架）。要先装好 rustup（`rustup target add aarch64-linux-android`，Homebrew 的 rust 没有 Android 目标）、JDK 17、Android SDK（`platforms;android-36`、`build-tools`）和 NDK，用 `ANDROID_HOME`、`NDK_HOME`、`JAVA_HOME` 指定。
 
 - 服务地址默认 `https://api.outbriefapp.com`，用 `VITE_OUTBRIEF_SERVER_URL` 换；手机连不到电脑上的 `localhost`。装好后在电脑上的 App 里打开「设置 → 设备 → 添加设备」，手机扫码加入同一个账号。
-- `src-tauri/gen/` 不进仓库：脚本在没有时先 `tauri android init`，再补上相机 / 麦克风权限（扫码、录音）和 release 签名。签名密钥第一次打包时生成在 `~/.outbrief-android/`（含随机密码，不在仓库里），之后一直用它签，新包才能覆盖安装。
+- `src-tauri/gen/` 不进仓库：脚本在没有时先 `tauri android init`，每次按 `app-icon.json` 重新生成图标，再补上相机 / 麦克风权限（扫码、录音）和 release 签名。签名密钥第一次打包时生成在 `~/.outbrief-android/`（含随机密码，不在仓库里），之后一直用它签，新包才能覆盖安装。
 - Android 的系统 WebView 用 Google Play 服务实现 `BarcodeDetector`，App 没声明时一扫码就闪退（很多手机也没有 Play 服务），所以 Android 版扫码用 `qr-scanner` 自带的解码 worker（`src/components/QrScanner.tsx`）。
 
 ## License
