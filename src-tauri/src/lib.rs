@@ -18,6 +18,9 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_http::init());
     // The webview shows no window.confirm: destructive actions ask through the native dialog.
     let builder = builder.plugin(tauri_plugin_dialog::init());
+    // Android: a foreground service keeps receiving calls while the webview is paused in the
+    // background, and rings them as full-screen notifications (OUTB-60).
+    let builder = builder.plugin(tauri_plugin_call_service::init());
     #[cfg(desktop)]
     let builder = desktop::configure(builder);
     #[cfg(mobile)]

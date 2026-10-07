@@ -35,6 +35,11 @@ const JSON_HEADERS: HeadersInit = { "Content-Type": "application/json" };
 export type ConnectionStatus = "connecting" | "online" | "offline" | "unauthorized";
 
 const MAX_BACKOFF_MS = 30_000;
+/**
+ * The server pings every 25 s: a stream silent for longer is dead (a phone that slept, a network
+ * that changed under it) and is replaced. Coming back on screen it is replaced after half that.
+ */
+const STALE_MS = 60_000;
 
 function authHeaders(s: ServerSettings): HeadersInit {
   return { Authorization: `Bearer ${s.token}`, "Content-Type": "application/json" };
@@ -260,7 +265,8 @@ export async function relaySettings(
 
 /**
  * Keeps an SSE connection to `/v1/stream` open until `signal` aborts, reconnecting with exponential
- * backoff and resuming from the last seen sequence so nothing pending is missed.
+ * backoff and resuming from the last seen sequence so nothing pending is missed. A connection that
+ * stays silent past the server's pings is replaced (`STALE_MS`).
  */
 export async function followEventStream(
   s: ServerSettings,
@@ -277,6 +283,17 @@ export async function followEventStream(
   let backoff = 1_000;
   while (!signal.aborted) {
     handlers.onStatus("connecting");
+    const attempt = new AbortController();
+    const abort = () => attempt.abort();
+    signal.addEventListener("abort", abort);
+    let heardAt = Date.now();
+    const watchdog = setInterval(() => {
+      if (Date.now() - heardAt > STALE_MS) abort();
+    }, STALE_MS / 4);
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && Date.now() - heardAt > STALE_MS / 2) abort();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     try {
       const resp = await fetch(new URL("/v1/stream", s.serverUrl), {
         headers: {
@@ -284,7 +301,7 @@ export async function followEventStream(
           Accept: "text/event-stream",
           "Last-Event-ID": String(lastSeq),
         },
-        signal,
+        signal: attempt.signal,
       });
       if (resp.status === 401) {
         await resp.body?.cancel();
@@ -299,6 +316,7 @@ export async function followEventStream(
       for (;;) {
         const { value, done } = await reader.read();
         if (done) break;
+        heardAt = Date.now();
         for (const frame of parser.push(value)) {
           if (frame.event === CALL_STATUS_EVENT_NAME) {
             handlers.onCallStatus?.(JSON.parse(frame.data) as RelayedEvent);
@@ -317,6 +335,10 @@ export async function followEventStream(
     } catch (err) {
       if (signal.aborted) return;
       console.warn("[outbrief] stream error", err);
+    } finally {
+      clearInterval(watchdog);
+      document.removeEventListener("visibilitychange", onVisible);
+      signal.removeEventListener("abort", abort);
     }
     handlers.onStatus("offline");
     await new Promise((r) => setTimeout(r, backoff));

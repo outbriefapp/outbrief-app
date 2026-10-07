@@ -64,6 +64,35 @@ export const en: Messages = {
     unreadable: (why) => `This call could not be decrypted and did not ring: ${why}`,
     prepareFailed: (why) => `Could not prepare the report's voice, so it did not ring: ${why}`,
     manageModes: "Manage modes…",
+    notificationsOff:
+      "Notifications are off: calls do not ring while the app is in the background or the phone is locked.",
+    turnOn: "Turn on",
+  },
+
+  callService: {
+    serviceChannel: "Background calls",
+    serviceTitle: "OutBrief is waiting for calls",
+    serviceText: "Calls ring in the background and on the lock screen too",
+    callChannel: "Calls",
+    missedChannel: "Missed calls",
+    missedTitle: "Missed call",
+    answer: "Answer",
+    toggle: "Keep receiving calls in the background and on the lock screen",
+    on: "On",
+    off: "Off",
+    hint: "While on, a notification “OutBrief is waiting for calls” stays in the notification shade. While off, calls ring only with the app open.",
+    notifications: "Notifications",
+    notificationsHint: "Calls ring and wake the screen through notifications.",
+    fullScreen: "Incoming call on the lock screen",
+    fullScreenHint: "Shows the incoming call over the lock screen; otherwise only a notification.",
+    battery: "Battery optimization",
+    batteryHint:
+      "Unrestricted, the system is less likely to stop background calls. Some phones also need OutBrief allowed to auto-start and run in the background in the system settings.",
+    granted: "Allowed",
+    denied: "Not allowed",
+    unrestricted: "Unrestricted",
+    restricted: "May be stopped",
+    change: "Settings",
   },
 
   incoming: {
@@ -351,6 +380,7 @@ export const en: Messages = {
       language: "Display language",
       modes: "Modes",
       ringtones: "Ringtones",
+      background: "Background calls",
     },
     group: {
       general: "General",

@@ -93,6 +93,11 @@ describe("resolveSettings", () => {
     expect(serverOf(settings)).toBeNull();
   });
 
+  it("receives calls in the background unless that was switched off (OUTB-60)", () => {
+    expect(resolveSettings(null).backgroundCalls).toBe(true);
+    expect(resolveSettings({ backgroundCalls: false }).backgroundCalls).toBe(false);
+  });
+
   it("is not connected without a token or a valid address", () => {
     expect(serverOf(resolveSettings(null, {}))).toBeNull();
     expect(serverOf(resolveSettings({ serverUrl: "localhost", token: "oba_t" }, {}))).toBeNull();

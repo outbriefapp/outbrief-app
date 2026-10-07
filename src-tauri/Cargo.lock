@@ -2558,6 +2558,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-autostart",
+ "tauri-plugin-call-service",
  "tauri-plugin-dialog",
  "tauri-plugin-http",
  "tauri-plugin-single-instance",
@@ -3972,6 +3973,14 @@ dependencies = [
  "tauri",
  "tauri-plugin",
  "thiserror 2.0.21",
+]
+
+[[package]]
+name = "tauri-plugin-call-service"
+version = "0.0.1"
+dependencies = [
+ "tauri",
+ "tauri-plugin",
 ]
 
 [[package]]

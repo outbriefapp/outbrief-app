@@ -1,0 +1,11 @@
+"$schema" = "schemas/schema.json"
+
+[default]
+description = "Everything the app's own page uses."
+permissions = [
+    "allow-configure",
+    "allow-set-ringtone",
+    "allow-get-status",
+    "allow-request-notifications",
+    "allow-open-settings",
+]

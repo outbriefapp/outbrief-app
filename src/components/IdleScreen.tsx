@@ -26,6 +26,9 @@ export function IdleScreen(props: {
   unreadable: UnreadableCall[];
   /** No end-to-end key yet: calls cannot be opened until it is fixed. */
   keyProblem: string | null;
+  /** Android: notifications are off, so calls cannot ring in the background (OUTB-60). */
+  notificationsOff: boolean;
+  onTurnOnNotifications: () => void;
   onRetry: (eventId: string) => void;
   onDrop: (eventId: string) => void;
   onDropUnreadable: (eventId: string) => void;
@@ -68,6 +71,14 @@ export function IdleScreen(props: {
           </button>
         </div>
       </header>
+      {props.notificationsOff && (
+        <p className="banner idle-banner">
+          <span className="idle-banner-text">{msg.idle.notificationsOff}</span>
+          <button type="button" className="link" onClick={props.onTurnOnNotifications}>
+            {msg.idle.turnOn}
+          </button>
+        </p>
+      )}
       <section className="idle-body">
         <div className={`status-dot ${props.status}`} />
         <p className="idle-title">{msg.idle.status[props.status]}</p>
