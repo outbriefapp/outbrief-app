@@ -13,6 +13,13 @@ export function statusLabel(status: EventStatus): string {
   return t().event.status[status];
 }
 
+/** How a call ended: "已完成", or "已在 iPhone 接听" when another device answered or ended it. */
+export function callStatusLabel(e: AgentEvent): string {
+  if (!e.handledBy) return statusLabel(e.status);
+  const msg = t().event;
+  return e.handledBy.name ? msg.elsewhere[e.status](e.handledBy.name) : msg.handledElsewhere;
+}
+
 /** Multica reports are from a named agent; other sources only know their CLI. */
 export function callerName(e: AgentEvent): string {
   if (e.multica) return e.multica.agentName;

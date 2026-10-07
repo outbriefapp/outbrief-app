@@ -256,3 +256,61 @@ describe("callReducer ringing order", () => {
     expect(missedCalls(s).map((e) => e.id)).toEqual(["e2", "e1"]);
   });
 });
+
+describe("calls another device answered or ended (OUTB-57)", () => {
+  const elsewhere = (...seqs: number[]): CallAction => ({
+    type: "endedElsewhere",
+    ids: seqs.map((seq) => `e${seq}`),
+  });
+
+  it("stops ringing and lets the next call ring", () => {
+    const s = run(arrived(1), prepared(1), arrived(2), prepared(2), elsewhere(1));
+    expect(s.current).toEqual({ event: ev(2), phase: "ringing" });
+    expect(s.prepared.has("e1")).toBe(false);
+  });
+
+  it("ends the call on screen when this device lost the race to answer it", () => {
+    const s = run(arrived(1), prepared(1), { type: "accept" }, elsewhere(1));
+    expect(s.current).toBeNull();
+  });
+
+  it("drops waiting, missed and failed calls, and never rings them when they arrive later", () => {
+    const quiet = run({ type: "ringAllowedChanged", allowed: false }, arrived(1));
+    expect(missedCalls(callReducer(quiet, elsewhere(1)))).toEqual([]);
+
+    const waiting = run(arrived(1), prepared(1), { type: "accept" }, arrived(2), elsewhere(2));
+    expect(waiting.waiting).toEqual([]);
+    expect(waiting.current?.event.id).toBe("e1");
+
+    const broken = run(arrived(1), failed(1), elsewhere(1));
+    expect(broken.failed).toEqual([]);
+
+    const early = run(elsewhere(3), arrived(3));
+    expect(early.current).toBeNull();
+    expect(missedCalls(early)).toEqual([]);
+  });
+
+  it("ignores calls this device no longer holds", () => {
+    const s = run(arrived(1), prepared(1), { type: "decline" });
+    expect(callReducer(s, elsewhere(1))).toBe(s);
+  });
+
+  it("after a reconnect drops the calls that ended while offline, but not newer ones", () => {
+    const s = run(
+      arrived(1),
+      prepared(1),
+      { type: "accept" },
+      arrived(2),
+      arrived(3),
+      arrived(4),
+      arrived(5),
+    );
+    const after = callReducer(s, { type: "reconciled", pending: new Set(["e3"]), upToSeq: 4 });
+    // e1 is on screen, e5 arrived after the pending calls were listed.
+    expect(after.current?.event.id).toBe("e1");
+    expect(after.waiting.map((e) => e.id).sort()).toEqual(["e3", "e5"]);
+    expect(
+      callReducer(after, { type: "reconciled", pending: new Set(["e3", "e5"]), upToSeq: 5 }),
+    ).toBe(after);
+  });
+});

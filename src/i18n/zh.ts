@@ -157,6 +157,15 @@ export const zh = {
       dismissed: "已拒绝",
       acknowledged: "已知悉",
     },
+    /** A call another device answered or ended (OUTB-57); `device` is its name. */
+    elsewhere: {
+      received: (device: string) => `已在 ${device} 接听`,
+      completed: (device: string) => `已在 ${device} 接听`,
+      dismissed: (device: string) => `已在 ${device} 拒绝`,
+      acknowledged: (device: string) => `已在 ${device} 知悉`,
+    },
+    /** It ended on another device while this one was offline: which and how is unknown. */
+    handledElsewhere: "已在其他设备处理",
     genericSource: "Agent",
     taskReport: "任务汇报",
   },

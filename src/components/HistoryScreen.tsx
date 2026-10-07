@@ -16,7 +16,13 @@ import {
 } from "../callList.ts";
 import { type DaemonLink, fetchMulticaIssues } from "../daemonLink.ts";
 import { applyUpdate } from "../e2e/events.ts";
-import { callerName, callerSubtitle, formatDateTime, projectName, statusLabel } from "../format.ts";
+import {
+  callerName,
+  callerSubtitle,
+  callStatusLabel,
+  formatDateTime,
+  projectName,
+} from "../format.ts";
 import { useT } from "../i18n/index.ts";
 import { multicaErrorText } from "../multicaSettings.ts";
 import type { AgentEvent } from "../protocol.ts";
@@ -158,7 +164,7 @@ export function HistoryScreen(props: {
       <button type="button" className="history-row" onClick={() => setSelected(e.id)}>
         <CallSummary event={e} />
         <div className="row-bottom">
-          <span className={`status-tag ${e.status}`}>{statusLabel(e.status)}</span>
+          <span className={`status-tag ${e.status}`}>{callStatusLabel(e)}</span>
           <span className="headline">
             {e.brief?.brief?.verdict.headline ?? msg.history.noBrief}
           </span>
@@ -278,7 +284,7 @@ function HistoryDetail(props: { record: CallRecord; ctx: CallContext | null; onB
     <main className="screen history-detail">
       <header className="idle-header">
         <BackButton onClick={props.onBack} />
-        <span className={`status-tag ${event.status}`}>{statusLabel(event.status)}</span>
+        <span className={`status-tag ${event.status}`}>{callStatusLabel(event)}</span>
       </header>
       <section className="history-meta">
         {projectName(event) && <p className="project-name">{projectName(event)}</p>}

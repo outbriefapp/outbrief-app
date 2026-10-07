@@ -160,6 +160,13 @@ export const en: Messages = {
       dismissed: "Declined",
       acknowledged: "Acknowledged",
     },
+    elsewhere: {
+      received: (device: string) => `Answered on ${device}`,
+      completed: (device: string) => `Answered on ${device}`,
+      dismissed: (device: string) => `Declined on ${device}`,
+      acknowledged: (device: string) => `Acknowledged on ${device}`,
+    },
+    handledElsewhere: "Handled on another device",
     genericSource: "Agent",
     taskReport: "Task report",
   },

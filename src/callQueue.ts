@@ -19,6 +19,9 @@ export interface FailedReport {
  * never ring by themselves, not even once ringing is allowed again (YOUT-212): the user answers the
  * ones they want from the calls screen (`answer`), in any order, and acknowledges the rest
  * (`acknowledge`). Every report not on screen is listed there (`missedCalls`, YOUT-210).
+ * Every device of the account rings at once: a call another device answered or ended leaves this
+ * device's queue wherever it is (`endedElsewhere`), ringing or even on screen when this device lost
+ * the race to answer it (OUTB-57).
  */
 export interface CallState {
   current: { event: AgentEvent; phase: "preparing" | "ringing" | "active" } | null;
@@ -46,6 +49,13 @@ export type CallAction =
   | { type: "ringAllowedChanged"; allowed: boolean }
   | { type: "answer"; id: string }
   | { type: "acknowledge"; ids: string[] }
+  /** Another device answered or ended these calls. */
+  | { type: "endedElsewhere"; ids: string[] }
+  /**
+   * After a reconnect: of the calls up to `upToSeq`, only `pending` still wait for this device; the
+   * rest ended on another device while this one was offline. The call on screen stays.
+   */
+  | { type: "reconciled"; pending: ReadonlySet<string>; upToSeq: number }
   | { type: "accept" }
   | { type: "decline" }
   | { type: "hangUp" };
@@ -117,6 +127,28 @@ export function reportsToPrepare(state: CallState): AgentEvent[] {
   return [...queued(state), ...state.missed].filter((e) => !state.prepared.has(e.id));
 }
 
+/** `state` without the calls `ids`, wherever they are: on screen, queued, missed or failed. */
+function endElsewhere(state: CallState, ids: ReadonlySet<string>): CallState {
+  const knownIds = new Set([...state.knownIds, ...ids]);
+  const prepared = new Set([...state.prepared].filter((id) => !ids.has(id)));
+  const failed = state.failed.filter((f) => !ids.has(f.event.id));
+  const rest = { ...state, knownIds, prepared, failed };
+  if (state.current && ids.has(state.current.event.id)) {
+    return without({ ...rest, current: null }, ids);
+  }
+  return without(rest, ids);
+}
+
+/** Every call this device holds: on screen or preparing, queued, missed and failed. */
+function heldCalls(state: CallState): AgentEvent[] {
+  return [
+    ...(state.current ? [state.current.event] : []),
+    ...state.waiting,
+    ...state.missed,
+    ...state.failed.map((f) => f.event),
+  ];
+}
+
 export function callReducer(state: CallState, action: CallAction): CallState {
   switch (action.type) {
     case "arrived": {
@@ -185,6 +217,19 @@ export function callReducer(state: CallState, action: CallAction): CallState {
       if (!missedCalls(state).some((e) => ids.has(e.id))) return state;
       const prepared = new Set([...state.prepared].filter((id) => !ids.has(id)));
       return without({ ...state, prepared }, ids);
+    }
+    case "endedElsewhere": {
+      const ids = new Set(action.ids);
+      const held = heldCalls(state).some((e) => ids.has(e.id));
+      const unknown = action.ids.some((id) => !state.knownIds.has(id));
+      return held || unknown ? endElsewhere(state, ids) : state;
+    }
+    case "reconciled": {
+      const active = state.current?.phase === "active" ? state.current.event.id : null;
+      const ended = heldCalls(state)
+        .filter((e) => e.seq <= action.upToSeq && !action.pending.has(e.id) && e.id !== active)
+        .map((e) => e.id);
+      return ended.length ? endElsewhere(state, new Set(ended)) : state;
     }
     case "accept":
       return state.current?.phase === "ringing"
