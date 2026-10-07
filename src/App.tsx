@@ -19,6 +19,7 @@ import { applyUpdate, openEvent, openUpdate } from "./e2e/events.ts";
 import { useE2eKey } from "./e2e/useE2eKey.ts";
 import { errorMessage } from "./format.ts";
 import { resolveLocale, setLocale, systemLocale, useT } from "./i18n/index.ts";
+import { loadModeHistory, modesAt, rememberModes } from "./modeHistory.ts";
 import type { AgentEvent, CallOutcome, EventStatus, HandledBy, RelayedEvent } from "./protocol.ts";
 import {
   answerCall,
@@ -148,6 +149,10 @@ export function App() {
   useEffect(() => {
     onModesRef.current = onModes;
   });
+  // A call is missed by the modes on when it was received, which a phone often hears of later.
+  useEffect(() => {
+    rememberModes(onModes, Date.now());
+  }, [onModes]);
   const schedule = useRingSchedule(onModes);
   const [state, dispatch] = useReducer(callReducer, schedule.allowed, (allowed) => ({
     ...initialCallState,
@@ -268,11 +273,16 @@ export function App() {
               const event = await openEvent(e2eKey, relayed);
               if (ctrl.signal.aborted) return;
               // A call rings once per device, even after a restart or reload (YOUT-226).
+              const receivedAt = new Date(event.receivedAt);
               const arrival = arrivalOf({
                 recorded: loadCallRecord(event.id)?.event.status ?? null,
                 answeredHere: wasAnswered(event.id),
-                // Received in the quiet time (e.g. overnight while this app was closed): missed.
-                ringAllowed: isRingAllowed(onModesRef.current, new Date(event.receivedAt)),
+                // Received in the quiet time (e.g. overnight while this app was closed or asleep):
+                // missed, even when 睡眠 is switched off before this device hears of it (OUTB-58).
+                ringAllowed: isRingAllowed(
+                  modesAt(loadModeHistory(), receivedAt.getTime()) ?? onModesRef.current,
+                  receivedAt,
+                ),
               });
               if (arrival.kind === "ended") {
                 reportOutcome(server, event.id, arrival.outcome).catch((err) =>
