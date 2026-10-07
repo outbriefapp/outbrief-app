@@ -41,7 +41,7 @@ pnpm tauri dev
 pnpm install
 pnpm tauri android init
 pnpm tauri icon app-icon.json   # init 只写入 Tauri 默认图标，这一步换成 OutBrief 图标
-pnpm tauri android dev      # 装到设备或模拟器；发布包用 pnpm tauri android build
+pnpm tauri android dev      # 装到设备或模拟器；安装包用 scripts/build-android.sh（见「Android 安装包」）
 pnpm tauri ios init
 pnpm tauri ios dev          # 发布包用 pnpm tauri ios build
 ```
@@ -249,6 +249,15 @@ pnpm dev            # 只起前端（浏览器里调 UI）
 | `pnpm build` | 构建前端到 `dist/` |
 | `pnpm tauri build` | 打包桌面安装包 |
 | `pnpm tauri android init` / `ios init` | 生成本地 Android / iOS 工程，再 `dev` 或 `build`。见上文「安装本仓库」 |
+| `scripts/build-android.sh` | 打 Android 试用安装包 `dist-android/OutBrief.apk`（见下） |
+
+## Android 安装包
+
+`scripts/build-android.sh` 打一个 arm64 的 release APK，直接装到手机上试用（不上架）。要先装好 rustup（`rustup target add aarch64-linux-android`，Homebrew 的 rust 没有 Android 目标）、JDK 17、Android SDK（`platforms;android-36`、`build-tools`）和 NDK，用 `ANDROID_HOME`、`NDK_HOME`、`JAVA_HOME` 指定。
+
+- 服务地址默认 `https://api.outbriefapp.com`，用 `VITE_OUTBRIEF_SERVER_URL` 换；手机连不到电脑上的 `localhost`。装好后在电脑上的 App 里打开「设置 → 设备 → 添加设备」，手机扫码加入同一个账号。
+- `src-tauri/gen/` 不进仓库：脚本在没有时先 `tauri android init`，每次按 `app-icon.json` 重新生成图标，再补上相机 / 麦克风权限（扫码、录音）和 release 签名。签名密钥第一次打包时生成在 `~/.outbrief-android/`（含随机密码，不在仓库里），之后一直用它签，新包才能覆盖安装。
+- Android 的系统 WebView 用 Google Play 服务实现 `BarcodeDetector`，App 没声明时一扫码就闪退（很多手机也没有 Play 服务），所以 Android 版扫码用 `qr-scanner` 自带的解码 worker（`src/components/QrScanner.tsx`）。
 
 ## License
 
