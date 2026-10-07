@@ -21,7 +21,12 @@ pub fn run() {
     #[cfg(desktop)]
     let builder = desktop::configure(builder);
     #[cfg(mobile)]
-    let builder = builder.invoke_handler(tauri::generate_handler![read_daemon_local_key]);
+    let builder = builder
+        .invoke_handler(tauri::generate_handler![read_daemon_local_key])
+        .setup(|app| {
+            open_main_window(app.handle())?;
+            Ok(())
+        });
     builder
         .build(tauri::generate_context!())
         .expect("error while building OutBrief")
@@ -32,6 +37,36 @@ pub fn run() {
                 desktop::show_main_window(_app);
             }
         });
+}
+
+/// The config window is `create: false` (the desktop setup has to create it after the tray);
+/// setup creates it here, visible from the start, on phones too.
+fn open_main_window<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+) -> tauri::Result<tauri::WebviewWindow<R>> {
+    use tauri::Manager;
+    if let Some(window) = app.get_webview_window("main") {
+        return Ok(window);
+    }
+    let mut config = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|window| window.label == "main")
+        .cloned()
+        .ok_or(tauri::Error::WindowNotFound)?;
+    // `tauri dev` serves the UI at build.devUrl (`is_dev` = custom-protocol feature off).
+    // A window created here does not get that substitution, so an unset url stays blank.
+    if tauri::is_dev() {
+        if let Some(dev_url) = app.config().build.dev_url.clone() {
+            config.url = tauri::WebviewUrl::External(dev_url);
+        }
+    }
+    // Creating the webview hidden leaves WKWebView blank. Show it as it is created;
+    // setup still calls show() for the tray-reopen path.
+    config.visible = true;
+    tauri::webview::WebviewWindowBuilder::from_config(app, &config)?.build()
 }
 
 /// Requests to this machine never go through a proxy. The plugin's fetch (reqwest) picks up the
@@ -88,7 +123,6 @@ fn read_daemon_local_key() -> Option<String> {
 mod desktop {
     use tauri::menu::{Menu, MenuItem};
     use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-    use tauri::webview::WebviewWindowBuilder;
     use tauri::{AppHandle, Builder, Manager, Runtime, State, WebviewWindow, WindowEvent};
     use tauri_plugin_autostart::ManagerExt;
 
@@ -223,7 +257,7 @@ mod desktop {
             .setup(|app| {
                 setup_tray(app.handle())?;
                 let _ = app.autolaunch().disable();
-                let window = open_main_window(app.handle())?;
+                let window = super::open_main_window(app.handle())?;
                 #[cfg(target_os = "linux")]
                 super::linux::grant_microphone(&window)?;
                 // The window starts hidden (tauri.conf.json) so setup decides when it appears.
@@ -241,32 +275,6 @@ mod desktop {
     fn main_window<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWindow<R>> {
         app.get_webview_window("main")
             .ok_or(tauri::Error::WindowNotFound)
-    }
-
-    /// The config window is `create: false`; setup creates it here, visible from the start.
-    fn open_main_window<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWindow<R>> {
-        if let Some(window) = app.get_webview_window("main") {
-            return Ok(window);
-        }
-        let mut config = app
-            .config()
-            .app
-            .windows
-            .iter()
-            .find(|window| window.label == "main")
-            .cloned()
-            .ok_or(tauri::Error::WindowNotFound)?;
-        // `tauri dev` serves the UI at build.devUrl (`is_dev` = custom-protocol feature off).
-        // A window created here does not get that substitution, so an unset url stays blank.
-        if tauri::is_dev() {
-            if let Some(dev_url) = app.config().build.dev_url.clone() {
-                config.url = tauri::WebviewUrl::External(dev_url);
-            }
-        }
-        // Creating the webview hidden leaves WKWebView blank. Show it as it is created;
-        // setup still calls show() for the tray-reopen path.
-        config.visible = true;
-        WebviewWindowBuilder::from_config(app, &config)?.build()
     }
 
     pub fn show_main_window<R: Runtime>(app: &AppHandle<R>) {

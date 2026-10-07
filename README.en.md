@@ -44,7 +44,7 @@ The phone app is this same project. The Android and iOS projects are not checked
 ```bash
 pnpm install
 pnpm tauri android init
-pnpm tauri android dev      # device or emulator; pnpm tauri android build for a release
+pnpm tauri android dev      # device or emulator; scripts/build-android.sh for an installable APK
 pnpm tauri ios init
 pnpm tauri ios dev          # pnpm tauri ios build for a release
 ```
@@ -86,6 +86,7 @@ After pairing, the pages you fill in on each device:
 | `pnpm dev` | UI only, in a browser |
 | `pnpm tauri build` | Desktop installers |
 | `pnpm tauri android init` / `ios init` | Generate the local mobile project. Then `dev` or `build`. See [Install this repo](#install-this-repo) |
+| `scripts/build-android.sh` | Build an installable arm64 APK at `dist-android/OutBrief.apk` (server defaults to `https://api.outbriefapp.com`; adds camera / microphone permissions and signs with a key kept in `~/.outbrief-android/`, outside the repo) |
 | `pnpm lint` / `pnpm format` | Biome check / write |
 | `pnpm typecheck` | `tsc` |
 | `pnpm test` | Vitest |
