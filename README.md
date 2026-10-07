@@ -40,6 +40,7 @@ pnpm tauri dev
 ```bash
 pnpm install
 pnpm tauri android init
+pnpm tauri icon app-icon.json   # init 只写入 Tauri 默认图标，这一步换成 OutBrief 图标
 pnpm tauri android dev      # 装到设备或模拟器；发布包用 pnpm tauri android build
 pnpm tauri ios init
 pnpm tauri ios dev          # 发布包用 pnpm tauri ios build
@@ -208,7 +209,7 @@ pnpm tauri ios dev          # 发布包用 pnpm tauri ios build
 
 ## 图标
 
-中文名「启奏」（有本启奏，无本退朝）：朱红底上一本展开的金边奏折，折页上的竖行字写成声波——Agent 上奏，用语音汇报。源文件是 `app-icon.svg`；改图后导出 1024×1024 的 `app-icon.png`，再运行 `pnpm tauri icon app-icon.png` 重新生成 `src-tauri/icons/` 下所有尺寸。
+中文名「启奏」（有本启奏，无本退朝）：朱红底上一本展开的金边奏折，折页上的竖行字写成声波——Agent 上奏，用语音汇报。源文件是 `app-icon.svg`；改图后导出 1024×1024 的 `app-icon.png`，再运行 `pnpm tauri icon app-icon.json` 重新生成 `src-tauri/icons/` 下所有尺寸（本机已有 Android 工程时也会一并写入）。Android 自适应图标拆成两层：`app-icon-android-bg.svg` 是满铺的朱红底，`app-icon-android-fg.svg` 是缩进安全区的奏折，由 `app-icon.json` 指定；改了 `app-icon.svg` 的配色或图形，这两个文件要同步改。
 
 ## 桌面端
 
