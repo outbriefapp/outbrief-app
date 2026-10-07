@@ -1,6 +1,6 @@
 import { Check, Eye, EyeOff, KeyRound, RefreshCw, TriangleAlert, X } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { type DaemonLink, removeDaemonLlm, saveDaemonLlm } from "../daemonLink.ts";
+import { type DaemonLink, daemonLabel, removeDaemonLlm, saveDaemonLlm } from "../daemonLink.ts";
 import { errorMessage } from "../format.ts";
 import { t, useT } from "../i18n/index.ts";
 import { type EndpointTest, listModels, testEndpoint } from "../llm/endpoint.ts";
@@ -23,6 +23,9 @@ export function keyHint(key: string): string {
  * (`StructuredOutput`): 测试连接 makes the same kind of call the daemon makes with that strategy,
  * and offers the other one when json_schema is not supported. Saving keeps it on this device and, when the daemon
  * is reachable, makes it the daemon's brief LLM. Keys never go through the server in the clear.
+ * Another computer's daemon (reached through the server) keeps its own model unless the user ticks
+ * 同时用于…: a phone saving its own endpoint must not replace the one that computer works with
+ * (OUTB-57: a phone's OpenRouter replaced the Mac's 127.0.0.1 endpoint).
  */
 export function LlmSettingsSection(props: {
   value: LlmSettings;
@@ -64,6 +67,9 @@ export function LlmSettingsSection(props: {
   const [busy, setBusy] = useState<"save" | "clear" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // This machine's daemon always follows; another computer's only when asked.
+  const [alsoRemote, setAlsoRemote] = useState(false);
+  const syncDaemon = daemon && (daemon.kind === "local" || alsoRemote) ? daemon : null;
   const modelsRequest = useRef(0);
 
   const preset = LLM_PROVIDERS.find((p) => p.id === provider);
@@ -174,13 +180,13 @@ export function LlmSettingsSection(props: {
     setApiKey("");
     setChangingKey(false);
     setCustomUrl(provider === CUSTOM_PROVIDER ? baseUrl : "");
-    if (!daemon) {
+    if (!syncDaemon) {
       setBusy(null);
-      setNotice(m.savedHere);
+      setNotice(daemon ? m.savedNotDaemon(daemonLabel(daemon)) : m.savedHere);
       return;
     }
     try {
-      await saveDaemonLlm(daemon, draft);
+      await saveDaemonLlm(syncDaemon, draft);
       setNotice(m.savedBoth);
     } catch (err) {
       if (err instanceof ServerError && err.status === null) {
@@ -203,8 +209,8 @@ export function LlmSettingsSection(props: {
     setCustomUrl("");
     endpointChanged();
     try {
-      if (daemon) await removeDaemonLlm(daemon);
-      setNotice(m.cleared);
+      if (syncDaemon) await removeDaemonLlm(syncDaemon);
+      setNotice(syncDaemon || !daemon ? m.cleared : m.clearedHere(daemonLabel(daemon)));
     } catch (err) {
       // The daemon not running is fine: it has nothing to clear until it runs with this setting.
       if (err instanceof ServerError && err.status === null) setNotice(m.cleared);
@@ -403,6 +409,23 @@ export function LlmSettingsSection(props: {
           />
         )}
       </div>
+
+      {daemon?.kind === "relay" && (
+        <div className="field">
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={alsoRemote}
+              onChange={(e) => {
+                setAlsoRemote(e.target.checked);
+                setNotice(null);
+              }}
+            />
+            {m.alsoDaemon(daemon.machine.name)}
+          </label>
+          <span className="muted field-hint">{m.alsoDaemonHint}</span>
+        </div>
+      )}
 
       {error && <p className="warn">{error}</p>}
       {notice && <p className="notice">{notice}</p>}

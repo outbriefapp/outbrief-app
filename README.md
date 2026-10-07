@@ -199,7 +199,7 @@ pnpm tauri ios dev          # 发布包用 pnpm tauri ios build
   - **JSON Schema**：请求带 `response_format: json_schema`，由接口强制约束，最稳。OpenAI、Gemini、Grok、通义千问、豆包、Kimi、Ollama 等支持。
   - **JSON 模式**：给不支持 json_schema 的模型用（DeepSeek、智谱、Claude 的 OpenAI 兼容接口，以及不支持的本地模型）：把 JSON Schema 写进提示词，请求带 `response_format: json_object`，去掉模型可能包上的 markdown 代码块，再用同一个 schema 校验。
 - **测试连接**：按当前选的输出方式调一次（一个类似简报的小 schema，和 daemon 生成简报的调用方式相同）。三种结果：正常；能对话但这种输出方式不行（JSON Schema 下会给「换成 JSON 模式再测」按钮，一点就切换并重测）；失败并说明原因（Key 无效、地址或模型不存在等）。
-- **保存**：存进这台设备的本地设置；连着服务端且本机 daemon 在运行时，同时通过 `PUT http://127.0.0.1:8790/llm/settings` 设成 daemon 的主通道，下一份简报立即生效，不用重启。只有这一个接口，没有备用通道。Key 只在这台设备和本机 daemon 之间传，不经过服务端。
+- **保存**：存进这台设备的本地设置；连着服务端且本机 daemon 在运行时，同时通过 `PUT http://127.0.0.1:8790/llm/settings` 设成 daemon 的主通道，下一份简报立即生效，不用重启。手机上（或别的电脑上）连的是另一台电脑的 daemon 时，默认只存这台设备，不改那台电脑的简报模型；勾选「同时用于「电脑名」生成简报」才经服务端加密转过去替换它（两边能用的接口不一定一样，比如只在电脑本机的 `127.0.0.1` 地址，OUTB-57）。只有这一个接口，没有备用通道。Key 只在这台设备和本机 daemon 之间传，不经过服务端。
 - **清除配置**：本地和 daemon 的配置一起清掉。
 
 所有调用都走 AI SDK 的 `@ai-sdk/openai-compatible`，不用为每家服务商写适配。
