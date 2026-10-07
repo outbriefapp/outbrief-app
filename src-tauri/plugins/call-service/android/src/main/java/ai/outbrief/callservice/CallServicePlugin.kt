@@ -2,10 +2,12 @@ package ai.outbrief.callservice
 
 import android.Manifest
 import android.app.Activity
+import android.app.Application
 import android.app.NotificationManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Base64
@@ -40,23 +42,37 @@ class CallServicePlugin(private val activity: Activity) : Plugin(activity) {
 
   override fun load(webView: WebView) {
     super.load(webView)
+    // Tauri's own lifecycle hooks (Plugin.onPause / onResume) are never called: its generated
+    // TauriLifecycleObserver is not registered. The activity's callbacks tell when the page is on
+    // screen instead.
+    activity.application.registerActivityLifecycleCallbacks(Lifecycle())
     shown()
     showCall(activity.intent)
   }
 
-  override fun onResume() = shown()
+  private inner class Lifecycle : Application.ActivityLifecycleCallbacks {
+    override fun onActivityResumed(a: Activity) {
+      if (a === activity) shown()
+    }
 
-  override fun onPause() {
-    AppState.foreground = false
-  }
+    override fun onActivityPaused(a: Activity) {
+      if (a === activity) AppState.foreground = false
+    }
 
-  override fun onStop() {
-    // Once the call is over and the app left, it is behind the lock screen again.
-    if (overLockScreen) setOverLockScreen(false)
-  }
+    override fun onActivityStopped(a: Activity) {
+      // Once the call is over and the app left, it is behind the lock screen again.
+      if (a === activity && overLockScreen) setOverLockScreen(false)
+    }
 
-  override fun onDestroy() {
-    AppState.foreground = false
+    override fun onActivityDestroyed(a: Activity) {
+      if (a !== activity) return
+      AppState.foreground = false
+      a.application.unregisterActivityLifecycleCallbacks(this)
+    }
+
+    override fun onActivityCreated(a: Activity, state: Bundle?) {}
+    override fun onActivityStarted(a: Activity) {}
+    override fun onActivitySaveInstanceState(a: Activity, state: Bundle) {}
   }
 
   override fun onNewIntent(intent: Intent) = showCall(intent)

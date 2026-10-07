@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { arrivalOf, markAnswered, wasAnswered } from "./answered.ts";
+import { arrivalOf, isLate, markAnswered, RING_WINDOW_MS, wasAnswered } from "./answered.ts";
 
 beforeEach(() => {
   const items = new Map<string, string>();
@@ -35,7 +35,7 @@ describe("calls answered on this device", () => {
 });
 
 describe("arrivalOf", () => {
-  const fresh = { recorded: null, answeredHere: false, ringAllowed: true } as const;
+  const fresh = { recorded: null, answeredHere: false, ringAllowed: true, late: false } as const;
 
   it("rings a new call", () => {
     expect(arrivalOf(fresh)).toEqual({ kind: "ring" });
@@ -58,5 +58,25 @@ describe("arrivalOf", () => {
 
   it("keeps quiet-time calls missed", () => {
     expect(arrivalOf({ ...fresh, ringAllowed: false })).toEqual({ kind: "missed" });
+  });
+
+  it("lists a call heard of too late as missed: pending since before an update, or while offline", () => {
+    expect(arrivalOf({ ...fresh, late: true })).toEqual({ kind: "missed" });
+  });
+});
+
+describe("isLate", () => {
+  const received = new Date("2026-10-07T07:00:00Z");
+  const later = (ms: number) => new Date(received.getTime() + ms);
+
+  it("lets a call ring within the window, also when the phone's clock is a little behind", () => {
+    expect(isLate(received, later(0))).toBe(false);
+    expect(isLate(received, later(RING_WINDOW_MS))).toBe(false);
+    expect(isLate(received, later(-30_000))).toBe(false);
+  });
+
+  it("is late past the window, e.g. hours later after an update", () => {
+    expect(isLate(received, later(RING_WINDOW_MS + 1))).toBe(true);
+    expect(isLate(received, later(15 * 60 * 60_000))).toBe(true);
   });
 });
