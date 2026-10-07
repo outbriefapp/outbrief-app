@@ -1,5 +1,6 @@
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import type { AccountPatch } from "../account.ts";
+import { type CallServiceStatus, isAndroidApp, type SettingsTarget } from "../callService.ts";
 import { type DaemonLink, daemonLabel, fetchMulticaSettings } from "../daemonLink.ts";
 import {
   LANGUAGE_PREFS,
@@ -25,6 +26,7 @@ import { ttsEngine } from "../voice/tts/registry.ts";
 import { configOf, voiceFor } from "../voice/tts/settings.ts";
 import { localized } from "../voice/tts/types.ts";
 import { BackButton } from "./BackButton.tsx";
+import { BackgroundCallsPage } from "./BackgroundCallsPage.tsx";
 import { DevicesPage } from "./DevicesPage.tsx";
 import { E2eSettingsSection, keySummary } from "./E2eSettingsSection.tsx";
 import { LlmSettingsSection } from "./LlmSettingsSection.tsx";
@@ -55,6 +57,7 @@ export type SettingsPatch = Partial<
     | "activeModeIds"
     | "ringtones"
     | "customRingtones"
+    | "backgroundCalls"
   >
 >;
 
@@ -78,6 +81,12 @@ export function SettingsForm(props: {
   onClose: () => void;
   /** A page to open straight away (设置 → 模式 from the idle screen); back returns to the caller. */
   initialPage?: Page;
+  /** What the system lets the Android background call service do; null elsewhere. */
+  callService: {
+    status: CallServiceStatus | null;
+    request: () => void;
+    open: (target: SettingsTarget) => void;
+  };
 }) {
   const msg = useT();
   const { settings } = props;
@@ -158,6 +167,15 @@ export function SettingsForm(props: {
               />
             </>
           )}
+          {page === "background" && (
+            <BackgroundCallsPage
+              enabled={settings.backgroundCalls}
+              onEnabled={(backgroundCalls) => props.onSave({ backgroundCalls })}
+              status={props.callService.status}
+              onRequestNotifications={props.callService.request}
+              onOpen={props.callService.open}
+            />
+          )}
           {page === "language" && (
             <LanguagePage value={settings.language} onSave={save} onCancel={back} />
           )}
@@ -221,6 +239,13 @@ export function SettingsForm(props: {
           value={ringtoneSummary(settings)}
           onOpen={() => setPage("ringtones")}
         />
+        {isAndroidApp() && (
+          <SettingsRow
+            label={msg.settings.page.background}
+            value={settings.backgroundCalls ? msg.callService.on : msg.callService.off}
+            onOpen={() => setPage("background")}
+          />
+        )}
         <SettingsRow
           label={msg.settings.page.voice}
           value={voiceSummary(settings)}

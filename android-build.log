@@ -1,0 +1,142 @@
+info: component rust-std for target aarch64-linux-android is up to date
+        Appx Creating StoreLogo.png
+        Appx Creating Square30x30Logo.png
+        Appx Creating Square44x44Logo.png
+        Appx Creating Square71x71Logo.png
+        Appx Creating Square89x89Logo.png
+        Appx Creating Square107x107Logo.png
+        Appx Creating Square142x142Logo.png
+        Appx Creating Square150x150Logo.png
+        Appx Creating Square284x284Logo.png
+        Appx Creating Square310x310Logo.png
+        ICNS Creating icon.icns
+         ICO Creating icon.ico
+         PNG Creating 32x32.png
+         PNG Creating 64x64.png
+         PNG Creating 128x128.png
+         PNG Creating 128x128@2x.png
+         PNG Creating icon.png
+         iOS Creating AppIcon-20x20@2x-1.png
+         iOS Creating AppIcon-20x20@1x.png
+         iOS Creating AppIcon-20x20@2x.png
+         iOS Creating AppIcon-20x20@3x.png
+         iOS Creating AppIcon-29x29@2x-1.png
+         iOS Creating AppIcon-29x29@1x.png
+         iOS Creating AppIcon-29x29@2x.png
+         iOS Creating AppIcon-29x29@3x.png
+         iOS Creating AppIcon-40x40@2x-1.png
+         iOS Creating AppIcon-40x40@1x.png
+         iOS Creating AppIcon-40x40@2x.png
+         iOS Creating AppIcon-40x40@3x.png
+         iOS Creating AppIcon-60x60@2x.png
+         iOS Creating AppIcon-60x60@3x.png
+         iOS Creating AppIcon-76x76@1x.png
+         iOS Creating AppIcon-76x76@2x.png
+         iOS Creating AppIcon-83.5x83.5@2x.png
+         iOS Creating AppIcon-512@2x.png
+     Android Creating mipmap-hdpi/ic_launcher_foreground.png
+     Android Creating mipmap-mdpi/ic_launcher_foreground.png
+     Android Creating mipmap-xhdpi/ic_launcher_foreground.png
+     Android Creating mipmap-xxhdpi/ic_launcher_foreground.png
+     Android Creating mipmap-xxxhdpi/ic_launcher_foreground.png
+     Android Creating mipmap-hdpi/ic_launcher_background.png
+     Android Creating mipmap-mdpi/ic_launcher_background.png
+     Android Creating mipmap-xhdpi/ic_launcher_background.png
+     Android Creating mipmap-xxhdpi/ic_launcher_background.png
+     Android Creating mipmap-xxxhdpi/ic_launcher_background.png
+     Android Creating mipmap-hdpi/ic_launcher_round.png
+     Android Creating mipmap-hdpi/ic_launcher.png
+     Android Creating mipmap-mdpi/ic_launcher_round.png
+     Android Creating mipmap-mdpi/ic_launcher.png
+     Android Creating mipmap-xhdpi/ic_launcher_round.png
+     Android Creating mipmap-xhdpi/ic_launcher.png
+     Android Creating mipmap-xxhdpi/ic_launcher_round.png
+     Android Creating mipmap-xxhdpi/ic_launcher.png
+     Android Creating mipmap-xxxhdpi/ic_launcher_round.png
+     Android Creating mipmap-xxxhdpi/ic_launcher.png
+
+> outbrief-app@0.0.1 tauri /Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app
+> tauri "android" "build" "--apk" "--target" "aarch64"
+
+        Info Using installed NDK: /opt/homebrew/share/android-commandlinetools/ndk/27.2.12479018
+        Info Looking up installed tauri packages to check mismatched versions...
+        Warn The bundle identifier "ai.outbrief.app" set in `"tauri.conf.json" identifier` ends with `.app`. This is not recommended because it conflicts with the application bundle extension on macOS.
+     Running beforeBuildCommand `pnpm build`
+
+> outbrief-app@0.0.1 build /Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app
+> tsc -p tsconfig.json && vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 2145 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                    0.41 kB │ gzip:   0.28 kB
+dist/assets/index-Byx672DX.css                    34.20 kB │ gzip:   7.31 kB
+dist/assets/qr-scanner-worker.min-CJaXo3yu.js     43.95 kB │ gzip:  10.37 kB
+dist/assets/index-C4d7xPjF.js                  1,061.76 kB │ gzip: 305.48 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 181ms
+[1m[92m   Compiling[0m jni-sys v0.3.1
+[1m[92m   Compiling[0m tauri v2.11.6
+[1m[92m   Compiling[0m wry v0.55.1
+[1m[92m   Compiling[0m ndk-sys v0.6.0+11769913
+[1m[92m   Compiling[0m jni v0.21.1
+[1m[92m   Compiling[0m ndk v0.9.0
+[1m[92m   Compiling[0m tauri-plugin-fs v2.5.2
+[1m[92m   Compiling[0m tauri-plugin-call-service v0.0.1 (/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/plugins/call-service)
+[1m[92m   Compiling[0m tao v0.35.3
+[1m[92m   Compiling[0m tauri-runtime v2.11.3
+[1m[92m   Compiling[0m tauri-plugin-http v2.7.0
+[1m[92m   Compiling[0m tauri-plugin-dialog v2.7.3
+[1m[92m   Compiling[0m tauri-runtime-wry v2.11.4
+[1m[92m   Compiling[0m outbrief-app v0.0.1 (/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri)
+[1m[92m    Finished[0m `release` profile [optimized] target(s) in 13.02s
+        Info symlinking lib "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/target/aarch64-linux-android/release/liboutbrief_app_lib.so" in jniLibs dir "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/gen/android/app/src/main/jniLibs/arm64-v8a"
+        Info "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/target/aarch64-linux-android/release/liboutbrief_app_lib.so" requires shared lib "libandroid.so"
+        Info "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/target/aarch64-linux-android/release/liboutbrief_app_lib.so" requires shared lib "libdl.so"
+        Info "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/target/aarch64-linux-android/release/liboutbrief_app_lib.so" requires shared lib "liblog.so"
+        Info "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/target/aarch64-linux-android/release/liboutbrief_app_lib.so" requires shared lib "libm.so"
+        Info "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/target/aarch64-linux-android/release/liboutbrief_app_lib.so" requires shared lib "libc.so"
+        Info symlink at "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/gen/android/app/src/main/jniLibs/arm64-v8a/liboutbrief_app_lib.so" points to "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/target/aarch64-linux-android/release/liboutbrief_app_lib.so"
+w: file:///Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/gen/android/buildSrc/src/main/java/ai/outbrief/app/kotlin/BuildTask.kt:53:17 'exec(Action<in ExecSpec!>): ExecResult' is deprecated. Deprecated in Java
+        Info connection; remote_addr=127.0.0.1:63029 conn_id=0
+
+> outbrief-app@0.0.1 tauri /Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app
+> tauri "android" "android-studio-script" "--release" "--target" "aarch64"
+
+[1m[32m        Info[0m Using installed NDK: /opt/homebrew/share/android-commandlinetools/ndk/27.2.12479018
+[1m[92m    Finished[0m `release` profile [optimized] target(s) in 0.15s
+[1m[32m        Info[0m symlinking lib "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/target/aarch64-linux-android/release/liboutbrief_app_lib.so" in jniLibs dir "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/gen/android/app/src/main/jniLibs/arm64-v8a"
+[1m[32m        Info[0m "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/target/aarch64-linux-android/release/liboutbrief_app_lib.so" requires shared lib "libandroid.so"
+[1m[32m        Info[0m "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/target/aarch64-linux-android/release/liboutbrief_app_lib.so" requires shared lib "libdl.so"
+[1m[32m        Info[0m "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/target/aarch64-linux-android/release/liboutbrief_app_lib.so" requires shared lib "liblog.so"
+[1m[32m        Info[0m "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/target/aarch64-linux-android/release/liboutbrief_app_lib.so" requires shared lib "libm.so"
+[1m[32m        Info[0m "/Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/target/aarch64-linux-android/release/liboutbrief_app_lib.so" requires shared lib "libc.so"
+w: file:///Users/lizhibo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-2.11.6/mobile/android/src/main/java/app/tauri/AppPlugin.kt:35:37 'onBackPressed(): Unit' is deprecated. Deprecated in Java
+w: file:///Users/lizhibo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-2.11.6/mobile/android/src/main/java/app/tauri/plugin/Plugin.kt:107:5 'onDestroy(): Unit' is deprecated. use onDestroy(activity: AppCompatActivity) instead
+w: file:///Users/lizhibo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-2.11.6/mobile/android/src/main/java/app/tauri/plugin/Plugin.kt:112:5 'onRestart(): Unit' is deprecated. use onRestart(activity: AppCompatActivity) instead
+w: file:///Users/lizhibo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-2.11.6/mobile/android/src/main/java/app/tauri/plugin/PluginMethodData.kt:11:23 Parameter 'methodDecorator' is never used
+w: file:///Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/plugins/call-service/android/src/main/java/ai/outbrief/callservice/CallServicePlugin.kt:58:16 This declaration overrides deprecated member but not marked as deprecated itself. Please add @Deprecated annotation or suppress. See https://youtrack.jetbrains.com/issue/KT-47902 for details
+w: file:///Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/gen/android/app/src/main/java/ai/outbrief/app/generated/RustWebView.kt:26:18 'setter for databaseEnabled: Boolean' is deprecated. Deprecated in Java
+w: file:///Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/gen/android/app/src/main/java/ai/outbrief/app/generated/WryActivity.kt:69:46 'onBackPressed(): Unit' is deprecated. This method has been deprecated in favor of using the
+      {@link OnBackPressedDispatcher} via {@link #getOnBackPressedDispatcher()}.
+      The OnBackPressedDispatcher controls how back button events are dispatched
+      to one or more {@link OnBackPressedCallback} objects.
+
+[Incubating] Problems report is available at: file:///Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/gen/android/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+    Finished 1 APK at:
+        /Users/lizhibo/multica_workspaces_desktop-api.multica.ai/outbrief-c8ceeaf378f9/outb-60-4d2b239390e8/workdir/outbrief-app/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
+
+[android] APK：dist-android/OutBrief.apk

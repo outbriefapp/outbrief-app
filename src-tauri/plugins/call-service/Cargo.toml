@@ -1,0 +1,14 @@
+[package]
+name = "tauri-plugin-call-service"
+version = "0.0.1"
+description = "OutBrief on Android: keeps receiving calls in the background (foreground service) and rings them as full-screen notifications"
+edition = "2021"
+rust-version = "1.85"
+publish = false
+links = "tauri-plugin-call-service"
+
+[dependencies]
+tauri = "2"
+
+[build-dependencies]
+tauri-plugin = { version = "2", features = ["build"] }

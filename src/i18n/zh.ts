@@ -67,6 +67,35 @@ export const zh = {
     unreadable: (why: string) => `这通来电无法解密，没有响铃：${why}`,
     prepareFailed: (why: string) => `汇报语音生成失败，没有来电：${why}`,
     manageModes: "管理模式…",
+    notificationsOff: "通知没有打开：App 在后台或锁屏时来电不会响铃。",
+    turnOn: "去开启",
+  },
+
+  /** The Android background call service (OUTB-60): its notifications and 设置 → 后台来电. */
+  callService: {
+    serviceChannel: "后台接收来电",
+    serviceTitle: "OutBrief 正在等待来电",
+    serviceText: "App 在后台或锁屏时也会响铃",
+    callChannel: "来电",
+    missedChannel: "未接来电",
+    missedTitle: "未接来电",
+    answer: "接听",
+    toggle: "App 在后台或锁屏时继续接收来电",
+    on: "已开启",
+    off: "已关闭",
+    hint: "开启后通知栏会常驻一条「OutBrief 正在等待来电」。关掉后只有 App 开在前台时才会来电。",
+    notifications: "通知",
+    notificationsHint: "来电要靠通知响铃、亮屏。",
+    fullScreen: "锁屏来电界面",
+    fullScreenHint: "锁屏时直接显示来电界面；不允许时只在通知栏提醒。",
+    battery: "电池优化",
+    batteryHint:
+      "不受限制时系统更不容易停掉后台接收。部分手机还要在系统设置里允许 OutBrief「自启动」「后台运行」。",
+    granted: "已允许",
+    denied: "未允许",
+    unrestricted: "不受限制",
+    restricted: "可能被系统停止",
+    change: "去设置",
   },
 
   incoming: {
@@ -360,6 +389,7 @@ export const zh = {
       language: "界面语言",
       modes: "模式",
       ringtones: "铃声",
+      background: "后台来电",
     },
     group: {
       general: "通用",

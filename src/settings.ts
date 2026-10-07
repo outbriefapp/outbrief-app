@@ -75,6 +75,11 @@ export interface AppSettings extends ServerSettings {
   ringtones: RingtoneSettings;
   /** Tones the user added; their audio is in IndexedDB (`src/ringtoneStore.ts`) on this device. */
   customRingtones: CustomRingtone[];
+  /**
+   * 设置 → 后台来电 (Android): a foreground service keeps receiving calls while the app is in the
+   * background or the phone is locked (OUTB-60). On unless switched off.
+   */
+  backgroundCalls: boolean;
 }
 
 interface StoredSettings {
@@ -103,6 +108,7 @@ interface StoredSettings {
   activeModeIds?: unknown;
   ringtones?: unknown;
   customRingtones?: unknown;
+  backgroundCalls?: boolean;
   /** Saved before modes had 重复 days: the one mode in use. */
   activeModeId?: string | null;
 }
@@ -158,6 +164,7 @@ export function resolveSettings(stored: StoredSettings | null, env: EnvDefaults 
     ),
     ringtones: normalizeRingtones(stored?.ringtones, customRingtones),
     customRingtones,
+    backgroundCalls: stored?.backgroundCalls ?? true,
   };
 }
 

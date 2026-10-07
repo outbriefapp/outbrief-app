@@ -168,7 +168,11 @@ export function ModesPage(props: {
   );
 }
 
-function Switch(props: { checked: boolean; label: string; onChange: (checked: boolean) => void }) {
+export function Switch(props: {
+  checked: boolean;
+  label: string;
+  onChange: (checked: boolean) => void;
+}) {
   return (
     <button
       type="button"

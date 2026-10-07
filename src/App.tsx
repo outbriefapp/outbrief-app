@@ -8,6 +8,12 @@ import { endedCall, loadCallRecord, saveCallRecord, updateCallRecord } from "./c
 import type { CallContext } from "./call/useCall.ts";
 import { isRingAllowed, switchOn } from "./callModes.ts";
 import { callReducer, initialCallState, missedCalls, reportsToPrepare } from "./callQueue.ts";
+import {
+  isAndroidApp,
+  useCallService,
+  useCallServiceStatus,
+  usePageVisible,
+} from "./callService.ts";
 import { ActiveCall, type CallResult } from "./components/ActiveCall.tsx";
 import { DispatchScreen } from "./components/DispatchScreen.tsx";
 import { HistoryScreen } from "./components/HistoryScreen.tsx";
@@ -426,13 +432,26 @@ export function App() {
     [server, handOff],
   );
 
+  // Android: the background call service rings while the page is not on screen (OUTB-60).
+  const backgroundCalls = isAndroidApp() && settings.backgroundCalls;
+  useCallService({
+    enabled: backgroundCalls,
+    server,
+    e2eKey,
+    modes: onModes,
+    ringtoneId: settings.ringtones.incoming,
+  });
+  const callService = useCallServiceStatus(server !== null && backgroundCalls);
+  const visible = usePageVisible();
+
   const ringingId = state.current?.phase === "ringing" ? state.current.event.id : null;
   useEffect(() => {
     if (ringingId) {
       requestCallAttention().catch((err) => console.warn("[outbrief] attention", err));
     }
   }, [ringingId]);
-  useRingtone(ringingId ? settings.ringtones.incoming : null);
+  // The service rings a paused page's calls itself; the page's own tone would play on top of it.
+  useRingtone(ringingId && (visible || !backgroundCalls) ? settings.ringtones.incoming : null);
 
   const finish = useCallback(
     (outcome: CallOutcome, result?: CallResult) => {
@@ -558,6 +577,7 @@ export function App() {
         onLeft={leave}
         onSwitched={joined}
         onClose={() => setView("idle")}
+        callService={callService}
       />
     );
   }
@@ -610,6 +630,10 @@ export function App() {
       failed={failed}
       unreadable={unreadable}
       keyProblem={keyState.phase === "missing" ? keyState.message : null}
+      notificationsOff={
+        backgroundCalls && !!callService.status && callService.status.notifications !== "granted"
+      }
+      onTurnOnNotifications={callService.request}
       onRetry={(id) => dispatch({ type: "retryPrepare", id })}
       onDrop={dropFailed}
       onDropUnreadable={dropUnreadable}
