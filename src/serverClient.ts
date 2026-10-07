@@ -1,5 +1,7 @@
 import { t } from "./i18n/index.ts";
 import {
+  ANSWERED_ELSEWHERE,
+  CALL_STATUS_EVENT_NAME,
   type CallOutcome,
   DELIVERY_EVENT_NAME,
   type Device,
@@ -48,16 +50,19 @@ export class ServerError extends Error {
   readonly code: string | null;
   /** The body's `message` (e.g. Multica's reason for refusing a dispatch); null when there was none. */
   readonly detail: string | null;
+  /** The whole JSON error body; null when there was none. */
+  readonly body: unknown;
 
   constructor(
     message: string,
     status: number | null,
-    options?: ErrorOptions & { code?: string | null; detail?: string | null },
+    options?: ErrorOptions & { code?: string | null; detail?: string | null; body?: unknown },
   ) {
     super(message, options);
     this.status = status;
     this.code = options?.code ?? null;
     this.detail = options?.detail ?? null;
+    this.body = options?.body ?? null;
   }
 }
 
@@ -96,6 +101,7 @@ export async function send(
   throw new ServerError(t().server.failed(path, resp.status, detail ?? ""), resp.status, {
     code,
     detail: message,
+    body,
   });
 }
 
@@ -117,6 +123,37 @@ export async function reportOutcome(
     method: "POST",
     body: { status },
   });
+}
+
+/**
+ * Takes the ringing call on this device. Every device of the account rings and the first to answer
+ * has the call: resolves `{ answered: false }` with who has it when another device was first.
+ */
+export async function answerCall(
+  s: ServerSettings,
+  eventId: string,
+): Promise<{ answered: true } | { answered: false; event: RelayedEvent }> {
+  try {
+    await request(s, `/v1/events/${encodeURIComponent(eventId)}/answer`, { method: "POST" });
+    return { answered: true };
+  } catch (err) {
+    if (err instanceof ServerError && err.code === ANSWERED_ELSEWHERE && err.body) {
+      return { answered: false, event: (err.body as { event: RelayedEvent }).event };
+    }
+    throw err;
+  }
+}
+
+/** Every call still waiting for this device (none another device answered), oldest first. */
+export async function listPendingEvents(s: ServerSettings): Promise<RelayedEvent[]> {
+  const events: RelayedEvent[] = [];
+  for (;;) {
+    const after = events.at(-1)?.seq ?? 0;
+    const resp = await request(s, `/v1/events?after=${after}`);
+    const page = ((await resp.json()) as { events: RelayedEvent[] }).events;
+    events.push(...page);
+    if (page.length === 0) return events;
+  }
 }
 
 /**
@@ -231,6 +268,8 @@ export async function followEventStream(
     onEvent: (e: RelayedEvent) => void;
     onStatus: (s: ConnectionStatus) => void;
     onEventUpdated?: (e: RelayedEvent) => void;
+    /** A device answered or ended a call (OUTB-57). */
+    onCallStatus?: (e: RelayedEvent) => void;
   },
   signal: AbortSignal,
 ): Promise<void> {
@@ -261,6 +300,10 @@ export async function followEventStream(
         const { value, done } = await reader.read();
         if (done) break;
         for (const frame of parser.push(value)) {
+          if (frame.event === CALL_STATUS_EVENT_NAME) {
+            handlers.onCallStatus?.(JSON.parse(frame.data) as RelayedEvent);
+            continue;
+          }
           if (frame.event === DELIVERY_EVENT_NAME) {
             handlers.onEventUpdated?.(JSON.parse(frame.data) as RelayedEvent);
             continue;

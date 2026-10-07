@@ -139,6 +139,18 @@ export interface RelayedEvent {
   multica?: { taskId: string; reply: MulticaReply | null };
   machine?: MachineRef;
   delivery?: RelayedDelivery;
+  /** The device that answered or ended the call (OUTB-57). */
+  handledBy?: HandledBy;
+}
+
+/**
+ * The device that answered or ended a call. Every device of the account rings; the first to answer
+ * has the call, the others stop ringing.
+ */
+export interface HandledBy {
+  id: string;
+  /** Empty when this device only knows another device handled it, not which. */
+  name: string;
 }
 
 export interface RelayedDelivery {
@@ -172,6 +184,8 @@ export interface AgentEvent {
   machine?: MachineRef;
   /** Present once a reply to a daemon-relayed event was queued. */
   delivery?: Delivery;
+  /** Set only on calls another device answered or ended: this device's history says so. */
+  handledBy?: HandledBy;
 }
 
 /** The user's reply, posted as a Multica comment under the agent's report. */
@@ -216,6 +230,15 @@ export const STREAM_EVENT_NAME = "agent-event";
 
 /** SSE event name for delivery status changes; `data` is the whole updated `RelayedEvent`. */
 export const DELIVERY_EVENT_NAME = "event-delivery";
+
+/**
+ * SSE event name for a call a device answered or ended; `data` is the `RelayedEvent` without its
+ * report. The devices still ringing it stop (OUTB-57).
+ */
+export const CALL_STATUS_EVENT_NAME = "call-status";
+
+/** 409 of `POST /v1/events/:id/answer` and `/status`: another device has the call. */
+export const ANSWERED_ELSEWHERE = "answered_elsewhere";
 
 /**
  * Briefs call the listener by this placeholder; the client replaces it with the user's 称呼

@@ -19,10 +19,12 @@ import { applyUpdate, openEvent, openUpdate } from "./e2e/events.ts";
 import { useE2eKey } from "./e2e/useE2eKey.ts";
 import { errorMessage } from "./format.ts";
 import { resolveLocale, setLocale, systemLocale, useT } from "./i18n/index.ts";
-import type { AgentEvent, CallOutcome, RelayedEvent } from "./protocol.ts";
+import type { AgentEvent, CallOutcome, EventStatus, HandledBy, RelayedEvent } from "./protocol.ts";
 import {
+  answerCall,
   type ConnectionStatus,
   followEventStream,
+  listPendingEvents,
   reportOutcome,
   type ServerSettings,
 } from "./serverClient.ts";
@@ -59,6 +61,18 @@ type View = "idle" | "settings" | "modes" | "history" | "dispatch";
 export interface UnreadableCall {
   relayed: RelayedEvent;
   message: string;
+}
+
+/** Handled on another device while this one was offline: which one and how is unknown. */
+const SOMEWHERE_ELSE: HandledBy = { id: "", name: "" };
+
+/** Saves a call another device answered or ended to this device's history, saying so. */
+function rememberElsewhere(event: AgentEvent, status: EventStatus, handledBy: HandledBy): void {
+  try {
+    saveCallRecord({ ...endedCall(event, "completed"), event: { ...event, status, handledBy } });
+  } catch (err) {
+    console.warn("[outbrief] save history", err);
+  }
 }
 
 /**
@@ -196,6 +210,23 @@ export function App() {
     addressNameRef.current = addressName;
   });
 
+  // Every device of the account rings at once; a call another device answered or ended leaves this
+  // one (OUTB-57). `opened` holds the calls this device opened and has not ended itself, for its
+  // history.
+  const opened = useRef(new Map<string, AgentEvent>());
+  const deviceId = settings.deviceId;
+  const deviceIdRef = useRef(deviceId);
+  useEffect(() => {
+    deviceIdRef.current = deviceId;
+  });
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  });
+  const handOffRef = useRef<(id: string, status: EventStatus, handledBy: HandledBy) => void>(
+    () => undefined,
+  );
+
   // Calls arrive sealed and are opened here, in arrival order. A new key reconnects: the replay of
   // pending calls opens the ones the old key could not (calls already opened never ring twice).
   useEffect(() => {
@@ -206,11 +237,33 @@ export function App() {
     const inOrder = (task: () => Promise<void>) => {
       opening = opening.then(task).catch((err: unknown) => console.warn("[outbrief] open", err));
     };
+    let lastSeq = 0;
+    // Back online: calls that ended on another device while this one was offline stop too.
+    const reconcile = () => {
+      const upToSeq = lastSeq;
+      listPendingEvents(server).then(
+        (events) =>
+          inOrder(async () => {
+            if (ctrl.signal.aborted) return;
+            const pending = new Set(events.map((e) => e.id));
+            const { current } = stateRef.current;
+            const active = current?.phase === "active" ? current.event.id : null;
+            for (const [id, event] of opened.current) {
+              if (event.seq <= upToSeq && !pending.has(id) && id !== active) {
+                handOffRef.current(id, "received", SOMEWHERE_ELSE);
+              }
+            }
+            dispatch({ type: "reconciled", pending, upToSeq });
+          }),
+        (err: unknown) => console.warn("[outbrief] reconcile", err),
+      );
+    };
     void followEventStream(
       server,
       {
         onEvent: (relayed) =>
           inOrder(async () => {
+            lastSeq = Math.max(lastSeq, relayed.seq);
             try {
               const event = await openEvent(e2eKey, relayed);
               if (ctrl.signal.aborted) return;
@@ -227,11 +280,9 @@ export function App() {
                 );
                 return;
               }
-              dispatch({
-                type: "arrived",
-                event: personalizeEvent(event, addressNameRef.current),
-                missed: arrival.kind === "missed",
-              });
+              const personal = personalizeEvent(event, addressNameRef.current);
+              opened.current.set(event.id, personal);
+              dispatch({ type: "arrived", event: personal, missed: arrival.kind === "missed" });
             } catch (err) {
               if (ctrl.signal.aborted) return;
               const message = errorMessage(err);
@@ -242,7 +293,22 @@ export function App() {
               );
             }
           }),
-        onStatus: setStatus,
+        onStatus: (next) => {
+          setStatus(next);
+          if (next === "online") reconcile();
+        },
+        onCallStatus: (relayed) =>
+          inOrder(async () => {
+            const { id, status, handledBy } = relayed;
+            if (ctrl.signal.aborted || !handledBy) return;
+            const record = loadCallRecord(id);
+            // This device's own answer or outcome; one it lost is settled by `answerCall`.
+            const mine =
+              handledBy.id === deviceIdRef.current ||
+              wasAnswered(id) ||
+              (record !== null && !record.event.handledBy);
+            if (!mine) handOffRef.current(id, status, handledBy);
+          }),
         onEventUpdated: (relayed) =>
           inOrder(async () => {
             const update = await openUpdate(e2eKey, relayed);
@@ -299,6 +365,57 @@ export function App() {
     }
   }, [state, synth]);
 
+  /** Another device answered or ended the call `id`: it stops here and the history says where. */
+  const handOff = useCallback((id: string, status: EventStatus, handledBy: HandledBy) => {
+    preparations.current.get(id)?.abort();
+    dispatch({ type: "endedElsewhere", ids: [id] });
+    setUnreadable((prev) => prev.filter((u) => u.relayed.id !== id));
+    const event = opened.current.get(id);
+    opened.current.delete(id);
+    if (event) rememberElsewhere(event, status, handledBy);
+    else {
+      // It already went to the history as answered elsewhere; now it ended there too.
+      try {
+        updateCallRecord(id, (r) =>
+          r.event.handledBy
+            ? {
+                ...r,
+                event: {
+                  ...r.event,
+                  status,
+                  handledBy: handledBy.name ? handledBy : r.event.handledBy,
+                },
+              }
+            : r,
+        );
+      } catch (err) {
+        console.warn("[outbrief] update history", err);
+      }
+    }
+  }, []);
+  useEffect(() => {
+    handOffRef.current = handOff;
+  });
+
+  /**
+   * Takes the call on this device. It is answered at once; if another device was first, it ends
+   * here and the history says where it was answered.
+   */
+  const claim = useCallback(
+    (id: string) => {
+      if (!server) return;
+      answerCall(server, id).then(
+        (result) => {
+          if (!result.answered && result.event.handledBy) {
+            handOff(id, result.event.status, result.event.handledBy);
+          }
+        },
+        (err: unknown) => console.warn("[outbrief] answer", err),
+      );
+    },
+    [server, handOff],
+  );
+
   const ringingId = state.current?.phase === "ringing" ? state.current.event.id : null;
   useEffect(() => {
     if (ringingId) {
@@ -311,6 +428,7 @@ export function App() {
     (outcome: CallOutcome, result?: CallResult) => {
       const current = state.current;
       if (!current || !server) return;
+      opened.current.delete(current.event.id);
       remember(current.event, outcome, result);
       dispatch({ type: outcome === "dismissed" ? "decline" : "hangUp" });
       reportOutcome(server, current.event.id, outcome).catch((err) =>
@@ -324,6 +442,7 @@ export function App() {
     (id: string) => {
       if (!server) return;
       const dropped = state.failed.find((f) => f.event.id === id);
+      opened.current.delete(id);
       if (dropped) remember(dropped.event, "dismissed");
       dispatch({ type: "dropFailed", id });
       reportOutcome(server, id, "dismissed").catch((err) =>
@@ -339,6 +458,7 @@ export function App() {
       if (!server) return;
       const missed = missedCalls(state).filter((e) => ids.includes(e.id));
       for (const event of missed) {
+        opened.current.delete(event.id);
         remember(event, "acknowledged");
         preparations.current.get(event.id)?.abort();
         reportOutcome(server, event.id, "acknowledged").catch((err) =>
@@ -399,6 +519,7 @@ export function App() {
         onAccept={() => {
           markAnswered(current.event.id);
           dispatch({ type: "accept" });
+          claim(current.event.id);
         }}
         onDecline={() => finish("dismissed")}
       />
@@ -453,6 +574,7 @@ export function App() {
         onAnswer={(id) => {
           markAnswered(id);
           dispatch({ type: "answer", id });
+          claim(id);
         }}
         onAcknowledge={acknowledge}
         onBack={() => setView("idle")}

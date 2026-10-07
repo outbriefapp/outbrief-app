@@ -160,6 +160,13 @@ export const en: Messages = {
       dismissed: "Declined",
       acknowledged: "Acknowledged",
     },
+    elsewhere: {
+      received: (device: string) => `Answered on ${device}`,
+      completed: (device: string) => `Answered on ${device}`,
+      dismissed: (device: string) => `Declined on ${device}`,
+      acknowledged: (device: string) => `Acknowledged on ${device}`,
+    },
+    handledElsewhere: "Handled on another device",
     genericSource: "Agent",
     taskReport: "Task report",
   },
@@ -518,6 +525,14 @@ export const en: Messages = {
       clear: "Clear",
       clearing: "Clearing…",
       cleared: "Cleared. Neither questions nor briefs call an LLM now; calls read the raw report.",
+      alsoDaemon: (computer) =>
+        `Also use it for briefs on “${computer}” (replaces that computer's model)`,
+      alsoDaemonHint:
+        "An endpoint that works on that computer (say, one only on its own 127.0.0.1) may not work here, and the other way round; usually leave this off.",
+      savedNotDaemon: (computer) =>
+        `Saved on this device. “${computer}” keeps its own model for briefs.`,
+      clearedHere: (computer) =>
+        `Cleared on this device. “${computer}” keeps its own model for briefs.`,
     },
     language: {
       label: "Display language",

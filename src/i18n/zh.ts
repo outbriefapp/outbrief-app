@@ -157,6 +157,15 @@ export const zh = {
       dismissed: "已拒绝",
       acknowledged: "已知悉",
     },
+    /** A call another device answered or ended (OUTB-57); `device` is its name. */
+    elsewhere: {
+      received: (device: string) => `已在 ${device} 接听`,
+      completed: (device: string) => `已在 ${device} 接听`,
+      dismissed: (device: string) => `已在 ${device} 拒绝`,
+      acknowledged: (device: string) => `已在 ${device} 知悉`,
+    },
+    /** It ended on another device while this one was offline: which and how is unknown. */
+    handledElsewhere: "已在其他设备处理",
     genericSource: "Agent",
     taskReport: "任务汇报",
   },
@@ -514,6 +523,14 @@ export const zh = {
       clear: "清除配置",
       clearing: "清除中…",
       cleared: "已清除。通话中提问和电脑端简报都不再调用大模型，来电时直接读原文。",
+      /** The daemon is another computer's: its briefs keep their own model unless asked (OUTB-57). */
+      alsoDaemon: (computer: string) => `同时用于「${computer}」生成简报（替换那台电脑现在的模型）`,
+      alsoDaemonHint:
+        "那台电脑上能用的接口（比如只在它本机的 127.0.0.1 地址）这台设备不一定能用，反过来也一样，一般不用勾选。",
+      savedNotDaemon: (computer: string) =>
+        `已保存到这台设备。「${computer}」生成简报仍用它自己的模型。`,
+      clearedHere: (computer: string) =>
+        `已清除这台设备的配置。「${computer}」生成简报仍用它自己的模型。`,
     },
     language: {
       label: "界面语言",
