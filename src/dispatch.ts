@@ -92,6 +92,7 @@ export function refusalMessage(err: unknown, agentName: string): string {
       ? t().dispatch.agentRefused(agentName, err.detail)
       : t().dispatch.agentUnavailable(agentName);
   }
+  if (err instanceof ServerError && err.code === "issue_not_found") return t().dispatch.issueGone;
   return t().dispatch.refused(errorMessage(err));
 }
 

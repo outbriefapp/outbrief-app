@@ -409,17 +409,27 @@ export interface DispatchOptions {
   agents: DispatchAgent[];
 }
 
-/** `POST /multica/dispatches`. */
-export interface DispatchInput {
+/** `POST /multica/dispatch/issues`: the project's issues a dispatch may comment on. */
+export interface DispatchIssuesInput {
   /** The first listened workspace when absent. */
   workspaceId?: string;
   projectId: string;
-  agentId: string;
+  /** Words of the title, or the issue's number / identifier. */
+  query?: string;
+}
+
+/**
+ * `POST /multica/dispatches`: a new issue in `projectId` written by `agentId`, or, with `issueId`,
+ * a comment on that existing issue (OUTB-61).
+ */
+export type DispatchInput = {
+  /** The first listened workspace when absent. */
+  workspaceId?: string;
   /** What the user said; may be empty when images are sent. */
   prompt: string;
   /** Screenshots / photos sent with it, uploaded first (YOUT-226). */
   attachments?: DispatchAttachment[];
-}
+} & ({ projectId: string; agentId: string } | { issueId: string });
 
 /** `POST /multica/uploads`: one image of a dispatch, uploaded to Multica by the daemon. */
 export interface DispatchImage {
@@ -459,8 +469,13 @@ export interface DispatchIssue {
 
 /** One request dispatched from the app, as the daemon that sent it keeps it. */
 export interface Dispatch {
-  /** The Multica quick-create task. */
+  /** The Multica quick-create task; for a `comment`, the comment. */
   id: string;
+  /**
+   * `issue` (absent on older dispatches): turned into a new issue. `comment`: posted on an issue
+   * the user picked, `created` at once; `agentName` is the issue's assigned agent ("" when none).
+   */
+  kind?: "issue" | "comment";
   workspaceId: string;
   projectId: string;
   projectTitle: string;
