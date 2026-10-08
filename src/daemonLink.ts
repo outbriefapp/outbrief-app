@@ -17,6 +17,9 @@ import type {
   DispatchAttachment,
   DispatchImage,
   DispatchInput,
+  DispatchIssue,
+  DispatchIssueStatus,
+  DispatchIssuesInput,
   DispatchOptions,
   LocalPairing,
   MulticaIssuesInput,
@@ -232,6 +235,43 @@ export function fetchDispatchOptions(
   return workspaceId
     ? daemonCall(link, "POST", "/multica/dispatch/options", { workspaceId }, signal)
     : daemonCall(link, "GET", "/multica/dispatch/options", undefined, signal);
+}
+
+/**
+ * The project's issues, most recently active first, that a dispatch may comment on instead of
+ * creating one (OUTB-61).
+ */
+export async function fetchDispatchIssues(
+  link: DaemonLink,
+  input: DispatchIssuesInput,
+  signal?: AbortSignal,
+): Promise<DispatchIssue[]> {
+  return (
+    await daemonCall<{ issues: DispatchIssue[] }>(
+      link,
+      "POST",
+      "/multica/dispatch/issues",
+      input,
+      signal,
+    )
+  ).issues;
+}
+
+/** The workspace's issue statuses, in board order, to filter the issue list by. */
+export async function fetchDispatchStatuses(
+  link: DaemonLink,
+  workspaceId: string | undefined,
+  signal?: AbortSignal,
+): Promise<DispatchIssueStatus[]> {
+  return (
+    await daemonCall<{ statuses: DispatchIssueStatus[] }>(
+      link,
+      "POST",
+      "/multica/dispatch/statuses",
+      workspaceId ? { workspaceId } : {},
+      signal,
+    )
+  ).statuses;
 }
 
 /**

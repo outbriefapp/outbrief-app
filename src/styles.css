@@ -2911,3 +2911,32 @@ button {
 .idle-banner-text {
   flex: 1;
 }
+
+/* OUTB-61: picking an existing issue to comment on. */
+.dispatch-issue-search {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #2c313a;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+}
+
+.dispatch-issue-list {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.dispatch-status-filter .pill {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+fieldset.dispatch-status-filter {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}

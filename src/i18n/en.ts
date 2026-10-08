@@ -209,6 +209,28 @@ export const en: Messages = {
     agent: "Agent",
     pickProject: "Pick a project",
     pickAgent: "Pick an agent",
+    issue: "Issue",
+    pickIssue: "Pick an issue: comment on an existing one, or create a new one",
+    newIssue: "New issue",
+    newIssueHint: "The agent creates a new issue from what you say",
+    searchIssues: "Search title or number",
+    statusFilter: "Filter by status (several at once; none for all)",
+    issuesLoading: "Loading issues…",
+    noIssues: "No issue found",
+    issuesFailed: (why) => `Could not load issues: ${why}`,
+    commentHint: (issue) =>
+      `Posted as a comment on ${issue}; its assigned agent takes it from there`,
+    sendComment: "Call and comment",
+    commenting: (issue) => `Commenting on ${issue}…`,
+    commentedTitle: (issue) => `Commented on ${issue}`,
+    commentedHint: (agent) =>
+      agent
+        ? `${agent} takes it from here; you'll get a call like this one when it is done`
+        : "No agent is assigned to this issue, so the comment starts no agent",
+    commentTag: "Comment",
+    commentMeta: (project, agent) =>
+      [project, agent ? `assigned to ${agent}` : "no agent assigned"].filter(Boolean).join(" · "),
+    issueGone: "This issue is gone (deleted or out of reach); pick another or create a new one",
     close: "Close",
     placeholder:
       "Tap the mic on your keyboard and say what needs doing. Priority and due date can be said too. Paste a screenshot or attach images below",

@@ -208,6 +208,27 @@ export const zh = {
     agent: "Agent",
     pickProject: "选项目",
     pickAgent: "选 Agent",
+    issue: "Issue",
+    pickIssue: "选 issue：选已有的就评论到它，不选就新建",
+    newIssue: "新建 issue",
+    newIssueHint: "让 Agent 按你说的新建一个 issue",
+    searchIssues: "搜索标题或编号",
+    statusFilter: "按状态筛选（可多选，不选就是全部）",
+    issuesLoading: "正在读取 issue…",
+    noIssues: "没有找到 issue",
+    issuesFailed: (why: string) => `没能读取 issue：${why}`,
+    commentHint: (issue: string) => `会作为评论发到 ${issue}，由它指派的 Agent 接着处理`,
+    sendComment: "呼叫并评论",
+    commenting: (issue: string) => `正在把你说的评论到 ${issue}…`,
+    commentedTitle: (issue: string) => `已评论到 ${issue}`,
+    commentedHint: (agent: string) =>
+      agent
+        ? `${agent} 会接着处理，做完会像现在这样给你来电汇报`
+        : "这个 issue 没有指派 Agent，评论不会让 Agent 开始处理",
+    commentTag: "追加评论",
+    commentMeta: (project: string, agent: string) =>
+      [project, agent ? `指派给 ${agent}` : "未指派 Agent"].filter(Boolean).join(" · "),
+    issueGone: "这个 issue 已经不在了（被删除或没有权限），换一个或新建",
     close: "关闭",
     placeholder:
       "点键盘上的麦克风，直接说要干什么。优先级、截止日期也一起说就行。截图可以直接粘贴或点下面的图片按钮附上",

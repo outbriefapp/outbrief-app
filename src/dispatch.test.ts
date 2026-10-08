@@ -101,6 +101,13 @@ describe("why dispatching does not work now", () => {
       "Multica 没有接单：HTTP 502",
     );
   });
+
+  it("says when the picked issue to comment on is gone (OUTB-61)", () => {
+    const gone = new ServerError("x", 422, { code: "issue_not_found" });
+    expect(refusalMessage(gone, "")).toBe(
+      "这个 issue 已经不在了（被删除或没有权限），换一个或新建",
+    );
+  });
 });
 
 describe("a dispatch in 我的派单", () => {

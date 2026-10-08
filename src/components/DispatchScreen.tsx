@@ -2,6 +2,7 @@ import {
   Bot,
   Check,
   ChevronRight,
+  CircleDot,
   FolderGit2,
   Image as ImageIcon,
   ImagePlus,
@@ -20,6 +21,8 @@ import {
   type DaemonLink,
   daemonLabel,
   fetchDispatches,
+  fetchDispatchIssues,
+  fetchDispatchStatuses,
   lookupDispatch,
   uploadDispatchImage,
 } from "../daemonLink.ts";
@@ -46,6 +49,8 @@ import type {
   Dispatch,
   DispatchAgent,
   DispatchAttachment,
+  DispatchIssue,
+  DispatchIssueStatus,
   DispatchProject,
 } from "../protocol.ts";
 import { useDispatchOptions, useListenedWorkspaces } from "../useDispatchOptions.ts";
@@ -56,6 +61,8 @@ import { BackButton } from "./BackButton.tsx";
 const CALLING_POLL_MS = 3_000;
 /** How often 我的派单 is read again while open. */
 const LIST_REFRESH_MS = 10_000;
+/** Pause after the last keystroke in the issue search before asking the computer. */
+const ISSUE_SEARCH_DEBOUNCE_MS = 300;
 
 type Stage =
   | { name: "compose" }
@@ -67,6 +74,8 @@ type Stage =
       name: "calling";
       agentName: string;
       projectTitle: string;
+      /** The existing issue the request is commented on; null for a new issue (OUTB-61). */
+      issue: DispatchIssue | null;
       dispatch: Dispatch | null;
       uploaded: number;
     }
@@ -78,8 +87,9 @@ type Stage =
  * 主动派单 (YOUT-222): say what needs doing on the phone, and the computer (whose outbrief-daemon
  * holds the Multica token) has the picked agent turn it into an issue with Multica's smart create.
  * The project and agent start from the last dispatch; the text box is for the keyboard's voice
- * input, and priority or due date are just said. While the computer is offline nothing can be
- * dispatched; the page says why and recovers by itself.
+ * input, and priority or due date are just said. Picking one of the project's existing issues
+ * posts the request as a comment on it instead, which its assigned agent picks up (OUTB-61). While
+ * the computer is offline nothing can be dispatched; the page says why and recovers by itself.
  */
 export function DispatchScreen(props: {
   /** The daemon that dispatches; null when this device reaches none. */
@@ -131,12 +141,15 @@ export function DispatchScreen(props: {
     link: DaemonLink,
     workspaceId: string | undefined,
     project: DispatchProject,
-    agent: DispatchAgent,
+    /** Who writes the new issue; null when commenting on `issue`. */
+    agent: DispatchAgent | null,
+    issue: DispatchIssue | null,
   ) => {
     setStage({
       name: "calling",
-      agentName: agent.name,
+      agentName: agent?.name ?? "",
       projectTitle: project.title,
+      issue,
       dispatch: null,
       uploaded: 0,
     });
@@ -159,27 +172,30 @@ export function DispatchScreen(props: {
       .then((attachments) =>
         createDispatch(link, {
           ...(workspaceId ? { workspaceId } : {}),
-          projectId: project.id,
-          agentId: agent.id,
+          ...(issue ? { issueId: issue.id } : { projectId: project.id, agentId: agent?.id ?? "" }),
           prompt: said.trim(),
           attachments,
         }),
       )
       .then(
         (dispatch) => {
-          saveLastPick({
-            ...(workspaceId ? { workspaceId } : {}),
-            projectId: project.id,
-            agentId: agent.id,
-          });
+          if (agent) {
+            saveLastPick({
+              ...(workspaceId ? { workspaceId } : {}),
+              projectId: project.id,
+              agentId: agent.id,
+            });
+          }
           setSaid("");
           for (const image of images) releaseImage(image);
           setImages([]);
-          setStage((s) => (s.name === "calling" ? { ...s, dispatch } : s));
+          // A comment is posted at once: nothing to wait for.
+          if (dispatch.state === "created") setStage({ name: "sent", dispatch });
+          else setStage((s) => (s.name === "calling" ? { ...s, dispatch } : s));
         },
         (err: unknown) => {
           console.warn("[outbrief] dispatch", err);
-          setStage({ name: "failed", message: refusalMessage(err, agent.name) });
+          setStage({ name: "failed", message: refusalMessage(err, agent?.name ?? "") });
         },
       );
   };
@@ -198,20 +214,24 @@ export function DispatchScreen(props: {
           setStage({ name: "failed", message: msg.dispatch.cancelFailed(errorMessage(err)) }),
       );
     };
+    const { issue } = stage;
+    const callee = issue ? issue.identifier : stage.agentName;
     return (
       <main className="screen call dispatch-calling">
         <div className="caller">
-          <div className="avatar ringing">{stage.agentName.slice(0, 1)}</div>
-          <h1>{stage.agentName}</h1>
+          <div className="avatar ringing">{callee.slice(0, 1)}</div>
+          <h1>{callee}</h1>
           <p className="hint">
-            {msg.dispatch.calling} · {stage.projectTitle}
+            {msg.dispatch.calling} · {issue ? issue.title : stage.projectTitle}
           </p>
           <p className="muted">
             {dispatch
               ? msg.dispatch.creating(stage.agentName)
               : stage.uploaded < images.length
                 ? msg.dispatch.uploading(stage.uploaded + 1, images.length)
-                : msg.dispatch.sending}
+                : issue
+                  ? msg.dispatch.commenting(issue.identifier)
+                  : msg.dispatch.sending}
           </p>
         </div>
         <div className="dispatch-calling-actions">
@@ -264,19 +284,25 @@ export function DispatchScreen(props: {
 
   if (stage.name === "sent") {
     const d = stage.dispatch;
+    const title =
+      d.kind === "comment" && d.issue
+        ? msg.dispatch.commentedTitle(d.issue.identifier)
+        : msg.dispatch.sentTitle(d.agentName);
     return (
       <main className="screen dispatch">
         <header className="idle-header">
           <BackButton onClick={props.onBack} />
-          <span className="brand">{msg.dispatch.sentTitle(d.agentName)}</span>
+          <span className="brand">{title}</span>
           <span className="header-spacer" />
         </header>
         <section className="dispatch-sent">
           <div className="dispatch-sent-icon">
             <Check size={32} aria-hidden />
           </div>
-          <p className="idle-title">{msg.dispatch.sentTitle(d.agentName)}</p>
-          <p className="muted">{msg.dispatch.sentHint}</p>
+          <p className="idle-title">{title}</p>
+          <p className="muted">
+            {d.kind === "comment" ? msg.dispatch.commentedHint(d.agentName) : msg.dispatch.sentHint}
+          </p>
           <DispatchCard dispatch={d} />
         </section>
         <div className="dispatch-actions">
@@ -331,7 +357,8 @@ function Compose(props: {
     link: DaemonLink,
     workspaceId: string | undefined,
     project: DispatchProject,
-    agent: DispatchAgent,
+    agent: DispatchAgent | null,
+    issue: DispatchIssue | null,
   ) => void;
   onOpenList: () => void;
   onBack: () => void;
@@ -351,7 +378,11 @@ function Compose(props: {
   const [pick, setPick] = useState<{ projectId: string | null; agentId: string | null } | null>(
     null,
   );
-  const [picking, setPicking] = useState<"workspace" | "project" | "agent" | null>(null);
+  // An existing issue of the project to comment on; none (the default) creates a new issue.
+  const [issue, setIssue] = useState<DispatchIssue | null>(null);
+  // The statuses the issue list is narrowed to (keys; none shows all), kept while the page is open.
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [picking, setPicking] = useState<"workspace" | "project" | "issue" | "agent" | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   // Images being read / shrunk, and why the last ones could not be added.
   const [reading, setReading] = useState(0);
@@ -400,11 +431,13 @@ function Compose(props: {
       ? msg.dispatch.loading
       : !project
         ? msg.dispatch.noProjects
-        : !agent
-          ? msg.dispatch.noAgents
-          : !agent.online
-            ? msg.dispatch.agentUnavailable(agent.name)
-            : null);
+        : issue
+          ? null
+          : !agent
+            ? msg.dispatch.noAgents
+            : !agent.online
+              ? msg.dispatch.agentUnavailable(agent.name)
+              : null);
   const ready = !blocker && !reading && (props.said.trim().length > 0 || props.images.length > 0);
 
   return (
@@ -465,17 +498,36 @@ function Compose(props: {
               <button
                 type="button"
                 className="settings-row"
-                disabled={!options}
-                onClick={() => setPicking("agent")}
+                disabled={!project}
+                onClick={() => setPicking("issue")}
               >
-                <Bot size={18} aria-hidden />
-                <span className="settings-row-label">{msg.dispatch.agent}</span>
-                <span className="settings-row-value">{agent?.name ?? msg.common.notSet}</span>
+                <CircleDot size={18} aria-hidden />
+                <span className="settings-row-label">{msg.dispatch.issue}</span>
+                <span className="settings-row-value">
+                  {issue ? `${issue.identifier} ${issue.title}` : msg.dispatch.newIssue}
+                </span>
                 <ChevronRight size={16} className="settings-row-chevron" aria-hidden />
               </button>
             </li>
+            {/* A comment goes to whoever the issue is assigned to. */}
+            {!issue && (
+              <li>
+                <button
+                  type="button"
+                  className="settings-row"
+                  disabled={!options}
+                  onClick={() => setPicking("agent")}
+                >
+                  <Bot size={18} aria-hidden />
+                  <span className="settings-row-label">{msg.dispatch.agent}</span>
+                  <span className="settings-row-value">{agent?.name ?? msg.common.notSet}</span>
+                  <ChevronRight size={16} className="settings-row-chevron" aria-hidden />
+                </button>
+              </li>
+            )}
           </ul>
         </div>
+        {issue && <p className="hint-line">{msg.dispatch.commentHint(issue.identifier)}</p>}
         <div className="dispatch-say">
           <textarea
             value={props.said}
@@ -545,11 +597,13 @@ function Compose(props: {
             type="button"
             className="round accept dispatch-send"
             disabled={!ready}
-            aria-label={msg.dispatch.send}
-            title={msg.dispatch.send}
-            onClick={() =>
-              daemon && project && agent && props.onSend(daemon, workspaceId, project, agent)
-            }
+            aria-label={issue ? msg.dispatch.sendComment : msg.dispatch.send}
+            title={issue ? msg.dispatch.sendComment : msg.dispatch.send}
+            onClick={() => {
+              if (!daemon || !project) return;
+              if (issue) props.onSend(daemon, workspaceId, project, null, issue);
+              else if (agent) props.onSend(daemon, workspaceId, project, agent, null);
+            }}
           >
             <PhoneOutgoing size={26} aria-hidden />
           </button>
@@ -570,7 +624,9 @@ function Compose(props: {
                 ? msg.dispatch.pickWorkspace
                 : picking === "project"
                   ? msg.dispatch.pickProject
-                  : msg.dispatch.pickAgent}
+                  : picking === "issue"
+                    ? msg.dispatch.pickIssue
+                    : msg.dispatch.pickAgent}
             </p>
             {picking === "workspace" ? (
               <ChoiceList
@@ -582,6 +638,9 @@ function Compose(props: {
                     setWorkspacePick(id);
                     // Its projects and agents are picked again once they are read.
                     setPick(null);
+                    setIssue(null);
+                    // Status keys are the workspace's own.
+                    setStatusFilter([]);
                   }
                   setPicking(null);
                 }}
@@ -592,10 +651,27 @@ function Compose(props: {
                 icon={<FolderGit2 size={18} aria-hidden />}
                 selected={project?.id}
                 onPick={(id) => {
+                  if (id !== project?.id) setIssue(null);
                   setPick((p) => ({ projectId: id, agentId: p?.agentId ?? null }));
                   setPicking(null);
                 }}
               />
+            ) : picking === "issue" ? (
+              project &&
+              daemon && (
+                <IssuePicker
+                  daemon={daemon}
+                  workspaceId={workspaceId}
+                  projectId={project.id}
+                  selected={issue}
+                  statusFilter={statusFilter}
+                  onStatusFilter={setStatusFilter}
+                  onPick={(picked) => {
+                    setIssue(picked);
+                    setPicking(null);
+                  }}
+                />
+              )
             ) : (
               <ChoiceList
                 items={options.agents.map((a) => ({
@@ -620,6 +696,136 @@ function Compose(props: {
         </div>
       )}
     </main>
+  );
+}
+
+/** Stands for "no issue picked: create a new one" in the issue list. */
+const NEW_ISSUE = "";
+
+/**
+ * The project's issues, most recently active first, searchable by title or number and narrowed to
+ * any of several statuses; "新建 issue" on top keeps the dispatch creating a new one (OUTB-61).
+ */
+function IssuePicker(props: {
+  daemon: DaemonLink;
+  workspaceId: string | undefined;
+  projectId: string;
+  selected: DispatchIssue | null;
+  /** Status keys picked; none shows every status. */
+  statusFilter: string[];
+  onStatusFilter: (keys: string[]) => void;
+  onPick: (issue: DispatchIssue | null) => void;
+}) {
+  const msg = useT();
+  const { daemon, workspaceId, projectId, statusFilter } = props;
+  const [query, setQuery] = useState("");
+  const [issues, setIssues] = useState<DispatchIssue[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [statuses, setStatuses] = useState<DispatchIssueStatus[]>([]);
+  // A stable dependency for the list read below.
+  const statusKey = statusFilter.join(",");
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetchDispatchStatuses(daemon, workspaceId, ctrl.signal).then(
+      (list) => !ctrl.signal.aborted && setStatuses(list),
+      (err: unknown) => {
+        if (ctrl.signal.aborted) return;
+        console.warn("[outbrief] dispatch statuses", err);
+        setError(msg.dispatch.issuesFailed(errorMessage(err)));
+      },
+    );
+    return () => ctrl.abort();
+  }, [daemon, workspaceId, msg]);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => {
+      fetchDispatchIssues(
+        daemon,
+        {
+          ...(workspaceId ? { workspaceId } : {}),
+          projectId,
+          ...(query.trim() ? { query: query.trim() } : {}),
+          ...(statusKey ? { statuses: statusKey.split(",") } : {}),
+        },
+        ctrl.signal,
+      ).then(
+        (list) => {
+          if (ctrl.signal.aborted) return;
+          setIssues(list);
+          setError(null);
+        },
+        (err: unknown) => {
+          if (ctrl.signal.aborted) return;
+          console.warn("[outbrief] dispatch issues", err);
+          setError(msg.dispatch.issuesFailed(errorMessage(err)));
+        },
+      );
+    }, ISSUE_SEARCH_DEBOUNCE_MS);
+    return () => {
+      ctrl.abort();
+      clearTimeout(timer);
+    };
+  }, [daemon, workspaceId, projectId, query, statusKey, msg]);
+
+  return (
+    <>
+      <input
+        className="dispatch-issue-search"
+        type="search"
+        value={query}
+        placeholder={msg.dispatch.searchIssues}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      {statuses.length > 0 && (
+        <fieldset
+          className="chip-row dispatch-status-filter"
+          aria-label={msg.dispatch.statusFilter}
+        >
+          {statuses.map((s) => {
+            const on = statusFilter.includes(s.key);
+            return (
+              <button
+                key={s.key}
+                type="button"
+                className={`pill${on ? " selected" : ""}`}
+                aria-pressed={on}
+                onClick={() =>
+                  props.onStatusFilter(
+                    on ? statusFilter.filter((k) => k !== s.key) : [...statusFilter, s.key],
+                  )
+                }
+              >
+                {msg.dispatch.issueStatus[s.key] ?? s.name}
+              </button>
+            );
+          })}
+        </fieldset>
+      )}
+      <div className="dispatch-issue-list">
+        <ChoiceList
+          items={[
+            { id: NEW_ISSUE, name: msg.dispatch.newIssue, detail: msg.dispatch.newIssueHint },
+            ...(issues ?? []).map((i) => ({
+              id: i.id,
+              name: `${i.identifier} ${i.title}`,
+              detail: msg.dispatch.issueStatus[i.status] ?? i.status,
+            })),
+          ]}
+          icon={<CircleDot size={18} aria-hidden />}
+          selected={props.selected?.id ?? NEW_ISSUE}
+          onPick={(id) => props.onPick(issues?.find((i) => i.id === id) ?? null)}
+        />
+        {error ? (
+          <p className="hint-line warn">{error}</p>
+        ) : issues === null ? (
+          <p className="hint-line">{msg.dispatch.issuesLoading}</p>
+        ) : (
+          !issues.length && <p className="hint-line">{msg.dispatch.noIssues}</p>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -725,6 +931,9 @@ function DispatchCard(props: { dispatch: Dispatch; showTime?: boolean }) {
         {props.showTime && (
           <span className="dispatch-card-meta">{formatDateTime(d.createdAt)}</span>
         )}
+        {d.kind === "comment" && (
+          <span className="status-tag comment">{msg.dispatch.commentTag}</span>
+        )}
         <span className={`status-tag ${d.state}`}>{dispatchTag(d)}</span>
       </div>
       <p className="dispatch-card-title">
@@ -739,7 +948,11 @@ function DispatchCard(props: { dispatch: Dispatch; showTime?: boolean }) {
             </span>
           ))}
       </p>
-      <p className="dispatch-card-meta">{msg.dispatch.assignedTo(d.projectTitle, d.agentName)}</p>
+      <p className="dispatch-card-meta">
+        {d.kind === "comment"
+          ? msg.dispatch.commentMeta(d.projectTitle, d.agentName)
+          : msg.dispatch.assignedTo(d.projectTitle, d.agentName)}
+      </p>
       {d.prompt && <p className="dispatch-said">“{d.prompt}”</p>}
       {!!d.images && (
         <p className="dispatch-card-meta dispatch-card-images">
