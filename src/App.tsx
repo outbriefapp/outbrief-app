@@ -10,6 +10,7 @@ import { isRingAllowed, switchOn } from "./callModes.ts";
 import { callReducer, initialCallState, missedCalls, reportsToPrepare } from "./callQueue.ts";
 import {
   isAndroidApp,
+  shownStatus,
   useCallService,
   useCallServiceStatus,
   usePageVisible,
@@ -445,6 +446,11 @@ export function App() {
     ringtoneId: settings.ringtones.incoming,
   });
   const callService = useCallServiceStatus(server !== null && backgroundCalls);
+  // Whether the service's stream is open, while the page's own one is not.
+  const refreshCallService = callService.refresh;
+  useEffect(() => {
+    if (backgroundCalls && status !== "online") refreshCallService();
+  }, [backgroundCalls, status, refreshCallService]);
   const visible = usePageVisible();
 
   const ringingId = state.current?.phase === "ringing" ? state.current.event.id : null;
@@ -616,7 +622,9 @@ export function App() {
   }
   return (
     <IdleScreen
-      status={server ? status : "unconfigured"}
+      status={
+        server ? shownStatus(status, backgroundCalls ? callService.status : null) : "unconfigured"
+      }
       preparingCount={reportsToPrepare(state).length}
       modes={settings.modes}
       schedule={schedule}

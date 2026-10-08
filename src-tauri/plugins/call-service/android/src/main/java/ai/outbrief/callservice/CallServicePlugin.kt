@@ -130,7 +130,8 @@ class CallServicePlugin(private val activity: Activity) : Plugin(activity) {
 
   /**
    * What keeps calls from ringing in the background: `notifications` (granted / denied / prompt),
-   * `fullScreen` (may show over the lock screen), `unrestricted` (exempt from battery optimization).
+   * `fullScreen` (may show over the lock screen), `unrestricted` (exempt from battery optimization);
+   * also `connected`: the service's stream is open.
    */
   @Command
   fun getStatus(invoke: Invoke) {
@@ -203,5 +204,6 @@ class CallServicePlugin(private val activity: Activity) : Plugin(activity) {
       .put("notifications", notifications)
       .put("fullScreen", fullScreen)
       .put("unrestricted", unrestricted)
+      .put("connected", CallService.connected)
   }
 }

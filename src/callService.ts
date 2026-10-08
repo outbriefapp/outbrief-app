@@ -6,7 +6,7 @@ import { toBase64Url } from "./e2e/crypto.ts";
 import { type Messages, useT } from "./i18n/index.ts";
 import { loadRingtoneAudio } from "./ringtoneStore.ts";
 import { builtinRingtone } from "./ringtones.ts";
-import type { ServerSettings } from "./serverClient.ts";
+import type { ConnectionStatus, ServerSettings } from "./serverClient.ts";
 
 /**
  * The Android app's background call service (OUTB-60, `src-tauri/plugins/call-service`): while
@@ -30,6 +30,20 @@ export interface CallServiceStatus {
   fullScreen: boolean;
   /** Exempt from battery optimization: the system is less likely to stop the service. */
   unrestricted: boolean;
+  /** The service's own stream to the server is open. */
+  connected: boolean;
+}
+
+/**
+ * The connection the app shows. Back on screen the page's stream, paused in the background,
+ * reconnects; the service kept its own open meanwhile, so calls never stopped reaching this device
+ * and the app says it is connected rather than flashing 未连接 (OUTB-62).
+ */
+export function shownStatus(
+  page: ConnectionStatus,
+  service: CallServiceStatus | null,
+): ConnectionStatus {
+  return (page === "connecting" || page === "offline") && service?.connected ? "online" : page;
 }
 
 export type SettingsTarget = "notifications" | "fullScreen" | "battery";
@@ -126,21 +140,23 @@ const ASKED_KEY = "outbrief.notificationsAsked";
 
 /**
  * What the system lets the service do (null outside the Android app, or until read), re-read
- * whenever the page comes back on screen (e.g. from the system settings). Once this device is in an
- * account it asks for notifications by itself, once.
+ * whenever the page comes back on screen (e.g. from the system settings) and on `refresh`. Once
+ * this device is in an account it asks for notifications by itself, once.
  */
 export function useCallServiceStatus(inAccount: boolean): {
   status: CallServiceStatus | null;
+  refresh: () => void;
   request: () => void;
   open: (target: SettingsTarget) => void;
 } {
   const [status, setStatus] = useState<CallServiceStatus | null>(null);
   const android = isAndroidApp();
   const refresh = useCallback(() => {
+    if (!android) return;
     getCallServiceStatus().then(setStatus, (err: unknown) =>
       console.warn("[outbrief] call service status", err),
     );
-  }, []);
+  }, [android]);
   useEffect(() => {
     if (!android) return;
     refresh();
@@ -171,7 +187,7 @@ export function useCallServiceStatus(inAccount: boolean): {
       console.warn("[outbrief] notifications", err),
     );
   }, [status?.notifications, open]);
-  return { status, request, open };
+  return { status, refresh, request, open };
 }
 
 /** Whether the page is on screen; a paused Android webview reports hidden. */
