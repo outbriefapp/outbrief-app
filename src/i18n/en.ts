@@ -214,6 +214,7 @@ export const en: Messages = {
     newIssue: "New issue",
     newIssueHint: "The agent creates a new issue from what you say",
     searchIssues: "Search title or number",
+    statusFilter: "Filter by status (several at once; none for all)",
     issuesLoading: "Loading issues…",
     noIssues: "No issue found",
     issuesFailed: (why) => `Could not load issues: ${why}`,

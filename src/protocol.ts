@@ -416,6 +416,14 @@ export interface DispatchIssuesInput {
   projectId: string;
   /** Words of the title, or the issue's number / identifier. */
   query?: string;
+  /** Status keys: only issues in any of them; all when absent. */
+  statuses?: string[];
+}
+
+/** `POST /multica/dispatch/statuses`: one of the workspace's issue statuses (custom ones too). */
+export interface DispatchIssueStatus {
+  key: string;
+  name: string;
 }
 
 /**

@@ -213,6 +213,7 @@ export const zh = {
     newIssue: "新建 issue",
     newIssueHint: "让 Agent 按你说的新建一个 issue",
     searchIssues: "搜索标题或编号",
+    statusFilter: "按状态筛选（可多选，不选就是全部）",
     issuesLoading: "正在读取 issue…",
     noIssues: "没有找到 issue",
     issuesFailed: (why: string) => `没能读取 issue：${why}`,

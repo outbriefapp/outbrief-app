@@ -18,6 +18,7 @@ import type {
   DispatchImage,
   DispatchInput,
   DispatchIssue,
+  DispatchIssueStatus,
   DispatchIssuesInput,
   DispatchOptions,
   LocalPairing,
@@ -254,6 +255,23 @@ export async function fetchDispatchIssues(
       signal,
     )
   ).issues;
+}
+
+/** The workspace's issue statuses, in board order, to filter the issue list by. */
+export async function fetchDispatchStatuses(
+  link: DaemonLink,
+  workspaceId: string | undefined,
+  signal?: AbortSignal,
+): Promise<DispatchIssueStatus[]> {
+  return (
+    await daemonCall<{ statuses: DispatchIssueStatus[] }>(
+      link,
+      "POST",
+      "/multica/dispatch/statuses",
+      workspaceId ? { workspaceId } : {},
+      signal,
+    )
+  ).statuses;
 }
 
 /**

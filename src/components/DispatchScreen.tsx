@@ -22,6 +22,7 @@ import {
   daemonLabel,
   fetchDispatches,
   fetchDispatchIssues,
+  fetchDispatchStatuses,
   lookupDispatch,
   uploadDispatchImage,
 } from "../daemonLink.ts";
@@ -49,6 +50,7 @@ import type {
   DispatchAgent,
   DispatchAttachment,
   DispatchIssue,
+  DispatchIssueStatus,
   DispatchProject,
 } from "../protocol.ts";
 import { useDispatchOptions, useListenedWorkspaces } from "../useDispatchOptions.ts";
@@ -378,6 +380,8 @@ function Compose(props: {
   );
   // An existing issue of the project to comment on; none (the default) creates a new issue.
   const [issue, setIssue] = useState<DispatchIssue | null>(null);
+  // The statuses the issue list is narrowed to (keys; none shows all), kept while the page is open.
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [picking, setPicking] = useState<"workspace" | "project" | "issue" | "agent" | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   // Images being read / shrunk, and why the last ones could not be added.
@@ -635,6 +639,8 @@ function Compose(props: {
                     // Its projects and agents are picked again once they are read.
                     setPick(null);
                     setIssue(null);
+                    // Status keys are the workspace's own.
+                    setStatusFilter([]);
                   }
                   setPicking(null);
                 }}
@@ -658,6 +664,8 @@ function Compose(props: {
                   workspaceId={workspaceId}
                   projectId={project.id}
                   selected={issue}
+                  statusFilter={statusFilter}
+                  onStatusFilter={setStatusFilter}
                   onPick={(picked) => {
                     setIssue(picked);
                     setPicking(null);
@@ -695,21 +703,40 @@ function Compose(props: {
 const NEW_ISSUE = "";
 
 /**
- * The project's issues, most recently active first, searchable by title or number; "新建 issue"
- * on top keeps the dispatch creating a new one (OUTB-61).
+ * The project's issues, most recently active first, searchable by title or number and narrowed to
+ * any of several statuses; "新建 issue" on top keeps the dispatch creating a new one (OUTB-61).
  */
 function IssuePicker(props: {
   daemon: DaemonLink;
   workspaceId: string | undefined;
   projectId: string;
   selected: DispatchIssue | null;
+  /** Status keys picked; none shows every status. */
+  statusFilter: string[];
+  onStatusFilter: (keys: string[]) => void;
   onPick: (issue: DispatchIssue | null) => void;
 }) {
   const msg = useT();
-  const { daemon, workspaceId, projectId } = props;
+  const { daemon, workspaceId, projectId, statusFilter } = props;
   const [query, setQuery] = useState("");
   const [issues, setIssues] = useState<DispatchIssue[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [statuses, setStatuses] = useState<DispatchIssueStatus[]>([]);
+  // A stable dependency for the list read below.
+  const statusKey = statusFilter.join(",");
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetchDispatchStatuses(daemon, workspaceId, ctrl.signal).then(
+      (list) => !ctrl.signal.aborted && setStatuses(list),
+      (err: unknown) => {
+        if (ctrl.signal.aborted) return;
+        console.warn("[outbrief] dispatch statuses", err);
+        setError(msg.dispatch.issuesFailed(errorMessage(err)));
+      },
+    );
+    return () => ctrl.abort();
+  }, [daemon, workspaceId, msg]);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -720,6 +747,7 @@ function IssuePicker(props: {
           ...(workspaceId ? { workspaceId } : {}),
           projectId,
           ...(query.trim() ? { query: query.trim() } : {}),
+          ...(statusKey ? { statuses: statusKey.split(",") } : {}),
         },
         ctrl.signal,
       ).then(
@@ -739,7 +767,7 @@ function IssuePicker(props: {
       ctrl.abort();
       clearTimeout(timer);
     };
-  }, [daemon, workspaceId, projectId, query, msg]);
+  }, [daemon, workspaceId, projectId, query, statusKey, msg]);
 
   return (
     <>
@@ -750,6 +778,31 @@ function IssuePicker(props: {
         placeholder={msg.dispatch.searchIssues}
         onChange={(e) => setQuery(e.target.value)}
       />
+      {statuses.length > 0 && (
+        <fieldset
+          className="chip-row dispatch-status-filter"
+          aria-label={msg.dispatch.statusFilter}
+        >
+          {statuses.map((s) => {
+            const on = statusFilter.includes(s.key);
+            return (
+              <button
+                key={s.key}
+                type="button"
+                className={`pill${on ? " selected" : ""}`}
+                aria-pressed={on}
+                onClick={() =>
+                  props.onStatusFilter(
+                    on ? statusFilter.filter((k) => k !== s.key) : [...statusFilter, s.key],
+                  )
+                }
+              >
+                {msg.dispatch.issueStatus[s.key] ?? s.name}
+              </button>
+            );
+          })}
+        </fieldset>
+      )}
       <div className="dispatch-issue-list">
         <ChoiceList
           items={[
