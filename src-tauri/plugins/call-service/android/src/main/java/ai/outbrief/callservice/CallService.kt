@@ -44,6 +44,10 @@ class CallService : Service() {
     CallAlerts.createChannels(this, config.texts)
     goForeground()
     watchNetwork()
+    // Re-created by the system after it killed the process (the app swiped away, memory), the
+    // service is not always handed the null-intent start a sticky service is promised: follow the
+    // stream from here too, or calls stay silent until the app is opened again (OUTB-62).
+    if (config.enabled) follow()
   }
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -55,11 +59,15 @@ class CallService : Service() {
     CallAlerts.createChannels(this, config.texts)
     goForeground()
     if (intent?.action == ACTION_RECONNECT) reconnect()
-    if (worker?.isAlive != true) {
-      running = true
-      worker = Thread(::follow, "outbrief-stream").apply { start() }
-    }
+    follow()
     return START_STICKY
+  }
+
+  /** Starts following the stream unless it is followed already. */
+  private fun follow() {
+    if (worker?.isAlive == true) return
+    running = true
+    worker = Thread(::followLoop, "outbrief-stream").apply { start() }
   }
 
   override fun onDestroy() {
@@ -117,7 +125,7 @@ class CallService : Service() {
     synchronized(lock) { lock.notifyAll() }
   }
 
-  private fun follow() {
+  private fun followLoop() {
     var backoff = MIN_BACKOFF_MS
     while (running) {
       try {
@@ -182,6 +190,7 @@ class CallService : Service() {
       val code = conn.responseCode
       if (code == 401) return StreamEnd.UNAUTHORIZED
       if (code != 200) throw IllegalStateException("stream HTTP $code")
+      connected = true
       val reader = BufferedReader(InputStreamReader(conn.inputStream, Charsets.UTF_8))
       var event = "message"
       val data = StringBuilder()
@@ -211,6 +220,7 @@ class CallService : Service() {
       }
       return StreamEnd.CLOSED
     } finally {
+      connected = false
       connection = null
       conn.disconnect()
     }
@@ -250,6 +260,13 @@ class CallService : Service() {
     private const val READ_TIMEOUT_MS = 70_000
     private const val MIN_BACKOFF_MS = 1_000L
     private const val MAX_BACKOFF_MS = 30_000L
+
+    /**
+     * The service's stream is open: calls reach this device even while the page's own stream, paused
+     * in the background, reconnects after the app comes back on screen.
+     */
+    @Volatile var connected = false
+      private set
 
     /**
      * Starts or stops the service after the page changed what it should follow; `reconnect`: the

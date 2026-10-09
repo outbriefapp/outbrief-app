@@ -36,7 +36,7 @@ object AppState {
  * (over the lock screen) and the incoming ringtone, until the page opens, another device takes the
  * call, or `RING_TIMEOUT_MS` passes and it becomes a missed-call notification. Outside the ringing
  * time of the modes that are on a call does not ring: it is a silent missed-call notification,
- * as in the app.
+ * as in the app; so is a call heard of more than `RING_WINDOW_MS` after it came in.
  */
 object CallAlerts {
   private const val TAG = "OutBriefCalls"
@@ -50,6 +50,12 @@ object CallAlerts {
   const val EXTRA_CALL = "ai.outbrief.callservice.CALL"
   /** About as long as a phone rings before the call counts as missed. */
   private const val RING_TIMEOUT_MS = 60_000L
+  /**
+   * A call heard of later than this after the server received it was never rung in time (the phone
+   * was off or offline, or it is pending from before an update): it is missed, not rung now. The
+   * page's `RING_WINDOW_MS` (src/call/answered.ts).
+   */
+  private const val RING_WINDOW_MS = 2 * 60_000L
   const val RINGTONE_FILE = "outbrief-ringtone"
 
   private val main = Handler(Looper.getMainLooper())
@@ -92,12 +98,13 @@ object CallAlerts {
     if (AppState.foreground) return
     val texts = config.texts
     val caller = callerOf(event, config.e2eKey, texts)
-    val at = Calendar.getInstance().apply { timeInMillis = receivedAt(event) }
+    val received = receivedAt(event)
+    val at = Calendar.getInstance().apply { timeInMillis = received }
     val allowed = try {
       isRingAllowed(JSONArray(config.modes), at)
     } catch (e: Exception) {
       true
-    }
+    } && System.currentTimeMillis() - received <= RING_WINDOW_MS
     main.post {
       if (AppState.foreground || ringing.containsKey(id) || missed.contains(id)) return@post
       if (!allowed) {
@@ -151,7 +158,6 @@ object CallAlerts {
       .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
       .setContentIntent(openApp(context, id))
       .setAutoCancel(true)
-      .setSilent(true)
       .build()
     notify(context, id, MISSED_NOTIFICATION, notification)
   }
@@ -172,7 +178,8 @@ object CallAlerts {
       .addAction(0, texts.answer, open)
       .setOngoing(true)
       .setAutoCancel(true)
-      .setSilent(true)
+      // No setSilent(): AndroidX silences through a group that only its summary alerts, and the
+      // system then drops the full-screen intent. The channel makes no sound already.
       .build()
   }
 
