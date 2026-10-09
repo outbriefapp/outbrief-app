@@ -3,6 +3,7 @@ import { type AccountPatch, useAccountBootstrap } from "./account.ts";
 import { personalizeEvent } from "./addressName.ts";
 import { requestCallAttention } from "./attention.ts";
 import { arrivalOf, isLate, markAnswered, wasAnswered } from "./call/answered.ts";
+import { type InboxEntry, SOMEWHERE_ELSE, settleInbox } from "./call/inbox.ts";
 import { prepareSpeech } from "./call/prepare.ts";
 import { endedCall, loadCallRecord, saveCallRecord, updateCallRecord } from "./call/records.ts";
 import type { CallContext } from "./call/useCall.ts";
@@ -11,6 +12,7 @@ import { callReducer, initialCallState, missedCalls, reportsToPrepare } from "./
 import {
   isAndroidApp,
   shownStatus,
+  takeServiceInbox,
   useCallService,
   useCallServiceStatus,
   usePageVisible,
@@ -70,9 +72,6 @@ export interface UnreadableCall {
   relayed: RelayedEvent;
   message: string;
 }
-
-/** Handled on another device while this one was offline: which one and how is unknown. */
-const SOMEWHERE_ELSE: HandledBy = { id: "", name: "" };
 
 /** Saves a call another device answered or ended to this device's history, saying so. */
 function rememberElsewhere(event: AgentEvent, status: EventStatus, handledBy: HandledBy): void {
@@ -250,26 +249,78 @@ export function App() {
       opening = opening.then(task).catch((err: unknown) => console.warn("[outbrief] open", err));
     };
     let lastSeq = 0;
+    // Taken from the Android call service, not yet settled (kept when listing the pending fails).
+    let inbox: InboxEntry[] = [];
     // Back online: calls that ended on another device while this one was offline stop too.
     const reconcile = () => {
       const upToSeq = lastSeq;
-      listPendingEvents(server).then(
-        (events) =>
-          inOrder(async () => {
-            if (ctrl.signal.aborted) return;
-            const pending = new Set(events.map((e) => e.id));
-            const { current } = stateRef.current;
-            const active = current?.phase === "active" ? current.event.id : null;
-            for (const [id, event] of opened.current) {
-              if (event.seq <= upToSeq && !pending.has(id) && id !== active) {
-                handOffRef.current(id, "received", SOMEWHERE_ELSE);
+      // The service's inbox first: a call it heard of is on the pending list unless it ended.
+      takeServiceInbox()
+        .catch((err: unknown) => {
+          console.warn("[outbrief] call service inbox", err);
+          return [];
+        })
+        .then((taken) => {
+          inbox = [...inbox, ...taken];
+          return listPendingEvents(server);
+        })
+        .then(
+          (events) =>
+            inOrder(async () => {
+              if (ctrl.signal.aborted) return;
+              const pending = new Set(events.map((e) => e.id));
+              await settleServiceInbox(pending);
+              const { current } = stateRef.current;
+              const active = current?.phase === "active" ? current.event.id : null;
+              for (const [id, event] of opened.current) {
+                if (event.seq <= upToSeq && !pending.has(id) && id !== active) {
+                  handOffRef.current(id, "received", SOMEWHERE_ELSE);
+                }
               }
-            }
-            dispatch({ type: "reconciled", pending, upToSeq });
-          }),
-        (err: unknown) => console.warn("[outbrief] reconcile", err),
-      );
+              dispatch({ type: "reconciled", pending, upToSeq });
+            }),
+          (err: unknown) => console.warn("[outbrief] reconcile", err),
+        );
     };
+    // Calls another device answered while the page was paused go to the history saying where
+    // (OUTB-63); the ones it never opened are opened from the ciphertext the service kept.
+    const settleServiceInbox = async (pending: ReadonlySet<string>) => {
+      const entries = inbox;
+      inbox = [];
+      const steps = settleInbox(entries, {
+        pending,
+        deviceId: deviceIdRef.current,
+        opened: (id) => opened.current.has(id),
+        answeredHere: wasAnswered,
+        recorded: (id) => {
+          const record = loadCallRecord(id);
+          if (!record) return null;
+          return record.event.handledBy ? "elsewhere" : "mine";
+        },
+      });
+      for (const step of steps) {
+        if (step.kind === "handOff") {
+          handOffRef.current(step.id, step.status, step.handledBy);
+          continue;
+        }
+        try {
+          const event = await openEvent(e2eKey, step.event);
+          if (ctrl.signal.aborted) return;
+          opened.current.set(event.id, personalizeEvent(event, addressNameRef.current));
+          handOffRef.current(event.id, step.status, step.handledBy);
+        } catch (err) {
+          console.warn("[outbrief] open call from the service", err);
+        }
+      }
+    };
+    // Back on screen the page's stream may not have dropped: settle what the service heard anyway.
+    const onVisible = () => {
+      if (isAndroidApp() && document.visibilityState === "visible") reconcile();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    ctrl.signal.addEventListener("abort", () =>
+      document.removeEventListener("visibilitychange", onVisible),
+    );
     void followEventStream(
       server,
       {

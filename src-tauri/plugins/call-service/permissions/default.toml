@@ -8,4 +8,5 @@ permissions = [
     "allow-get-status",
     "allow-request-notifications",
     "allow-open-settings",
+    "allow-take-inbox",
 ]

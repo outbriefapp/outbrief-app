@@ -106,9 +106,20 @@ class CallServicePlugin(private val activity: Activity) : Plugin(activity) {
   @Command
   fun configure(invoke: Invoke) {
     val reconnect = config.save(invoke.getArgs())
+    if (reconnect) CallInbox.clear(activity)
     CallAlerts.createChannels(activity, config.texts)
     CallService.sync(activity, reconnect)
     invoke.resolve(JSObject().put("ringtoneId", config.ringtoneId))
+  }
+
+  /**
+   * Resolves `{ entries }`: the calls the service heard of since the last take, `{ id, event?,
+   * status? }` each (`CallInbox`), so the page can tell its history about calls another device
+   * answered while it was paused (OUTB-63).
+   */
+  @Command
+  fun takeInbox(invoke: Invoke) {
+    invoke.resolve(JSObject().put("entries", CallInbox.take(activity)))
   }
 
   /** `{ id, audio }`: the incoming ringtone's file, base64, for the service to ring with. */

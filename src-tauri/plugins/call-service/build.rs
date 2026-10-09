@@ -5,6 +5,7 @@ const COMMANDS: &[&str] = &[
     "get_status",
     "request_notifications",
     "open_settings",
+    "take_inbox",
 ];
 
 fn main() {
