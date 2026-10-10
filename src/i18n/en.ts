@@ -66,6 +66,8 @@ export const en: Messages = {
     manageModes: "Manage modes…",
     notificationsOff:
       "Notifications are off: calls do not ring while the app is in the background or the phone is locked.",
+    popUpOff:
+      "Incoming calls do not pop up: allow “Display over other apps” and calls come to the front while you use another app.",
     turnOn: "Turn on",
   },
 
@@ -85,6 +87,9 @@ export const en: Messages = {
     notificationsHint: "Calls ring and wake the screen through notifications.",
     fullScreen: "Incoming call on the lock screen",
     fullScreenHint: "Shows the incoming call over the lock screen; otherwise only a notification.",
+    popUp: "Pop up incoming calls",
+    popUpHint:
+      "While you use another app, the incoming call screen comes to the front, like a phone call; otherwise only a heads-up notification. Needs “Display over other apps”; Xiaomi, OPPO, vivo and similar phones also need “Display pop-up windows while running in the background” in the app's permissions.",
     battery: "Battery optimization",
     batteryHint:
       "Unrestricted, the system is less likely to stop background calls. Some phones also need OutBrief allowed to auto-start and run in the background in the system settings.",

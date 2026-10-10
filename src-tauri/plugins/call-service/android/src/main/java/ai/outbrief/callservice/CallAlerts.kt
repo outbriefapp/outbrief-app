@@ -1,5 +1,6 @@
 package ai.outbrief.callservice
 
+import android.app.KeyguardManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -16,6 +17,7 @@ import android.os.Looper
 import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.os.HandlerCompat
@@ -33,7 +35,8 @@ object AppState {
 
 /**
  * Rings calls the service hears of while the page is not on screen: a full-screen notification
- * (over the lock screen) and the incoming ringtone, until the page opens, another device takes the
+ * (over the lock screen) and the incoming ringtone; while the phone is in use, the app's
+ * incoming-call screen pops up over the app in use when it may (`popUp`). It rings until the page opens, another device takes the
  * call, or `RING_TIMEOUT_MS` passes and it becomes a missed-call notification. Outside the ringing
  * time of the modes that are on a call does not ring: it is a silent missed-call notification,
  * as in the app; so is a call heard of more than `RING_WINDOW_MS` after it came in.
@@ -114,6 +117,7 @@ object CallAlerts {
       ringing[id] = caller
       notify(context, id, CALL_NOTIFICATION, callNotification(context, id, caller, texts))
       startRinging(context, config)
+      popUp(context, id)
       HandlerCompat.postDelayed(main, { timedOut(context, id, texts) }, id, RING_TIMEOUT_MS)
     }
   }
@@ -183,18 +187,43 @@ object CallAlerts {
       .build()
   }
 
+  /** Whether the system lets the service open the app over other apps: 显示在其他应用上层. */
+  fun mayPopUp(context: Context): Boolean =
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)
+
+  /**
+   * Opens the app's incoming-call screen over whatever the phone shows, as a phone app's incoming
+   * call does (OUTB-65), instead of leaving the call a heads-up notification. Only an app allowed to
+   * show over other apps may open a screen from the background; without it, or over the lock screen
+   * (where the full-screen intent opens it already), this does nothing. Some phones (Xiaomi, OPPO,
+   * vivo…) also ask for their own 后台弹出界面 permission and silently drop the start without it.
+   */
+  private fun popUp(context: Context, id: String) {
+    if (!mayPopUp(context)) return
+    val power = context.getSystemService(PowerManager::class.java)
+    val keyguard = context.getSystemService(KeyguardManager::class.java)
+    if (!power.isInteractive || keyguard.isKeyguardLocked) return
+    try {
+      context.startActivity(launchIntent(context, id))
+    } catch (e: Exception) {
+      Log.w(TAG, "pop up the call", e)
+    }
+  }
+
   /** Opens the app; the page shows the call. */
-  private fun openApp(context: Context, id: String): PendingIntent {
+  private fun openApp(context: Context, id: String): PendingIntent = PendingIntent.getActivity(
+    context,
+    id.hashCode(),
+    launchIntent(context, id),
+    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+  )
+
+  private fun launchIntent(context: Context, id: String): Intent {
     val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
       ?: Intent().setPackage(context.packageName)
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
     intent.putExtra(EXTRA_CALL, id)
-    return PendingIntent.getActivity(
-      context,
-      id.hashCode(),
-      intent,
-      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-    )
+    return intent
   }
 
   private fun notify(context: Context, id: String, kind: Int, notification: Notification) {

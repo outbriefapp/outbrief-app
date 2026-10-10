@@ -29,6 +29,11 @@ export interface CallServiceStatus {
   notifications: NotificationPermission;
   /** May show the incoming call over the lock screen (Android 14+ can revoke it). */
   fullScreen: boolean;
+  /**
+   * May open the incoming-call screen over the app in use (显示在其他应用上层), as a phone app's
+   * incoming call does; otherwise a call in use only shows as a heads-up notification (OUTB-65).
+   */
+  popUp: boolean;
   /** Exempt from battery optimization: the system is less likely to stop the service. */
   unrestricted: boolean;
   /** The service's own stream to the server is open. */
@@ -47,7 +52,7 @@ export function shownStatus(
   return (page === "connecting" || page === "offline") && service?.connected ? "online" : page;
 }
 
-export type SettingsTarget = "notifications" | "fullScreen" | "battery";
+export type SettingsTarget = "notifications" | "fullScreen" | "popUp" | "battery";
 
 /** Texts the service shows, in the UI language. */
 function serviceTexts(msg: Messages): Record<string, string> {

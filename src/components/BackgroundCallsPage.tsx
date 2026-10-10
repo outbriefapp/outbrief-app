@@ -44,6 +44,13 @@ export function BackgroundCallsPage(props: {
               onChange={() => props.onOpen("fullScreen")}
             />
             <StatusRow
+              label={m.popUp}
+              hint={m.popUpHint}
+              value={status.popUp ? m.granted : m.denied}
+              ok={status.popUp}
+              onChange={() => props.onOpen("popUp")}
+            />
+            <StatusRow
               label={m.battery}
               hint={m.batteryHint}
               value={status.unrestricted ? m.unrestricted : m.restricted}

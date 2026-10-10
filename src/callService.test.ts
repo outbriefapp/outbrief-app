@@ -4,6 +4,7 @@ import { type CallServiceStatus, shownStatus } from "./callService.ts";
 const service = (connected: boolean): CallServiceStatus => ({
   notifications: "granted",
   fullScreen: true,
+  popUp: true,
   unrestricted: true,
   connected,
 });
