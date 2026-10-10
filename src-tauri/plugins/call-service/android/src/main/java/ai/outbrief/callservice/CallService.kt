@@ -236,10 +236,13 @@ class CallService : Service() {
       val relayed = JSONObject(data)
       if (event == CALL_STATUS_EVENT) {
         CallAlerts.ended(this, relayed.optString("id"))
+        // Kept for the page's history: "answered on <device>" (OUTB-63).
+        CallInbox.statusChanged(this, relayed)
         return
       }
       val seq = relayed.optLong("seq", 0)
       if (seq > config.lastSeq) config.lastSeq = seq
+      CallInbox.arrived(this, relayed)
       if (relayed.optString("status") == "received" && !relayed.has("handledBy")) {
         CallAlerts.incoming(this, config, relayed)
       }

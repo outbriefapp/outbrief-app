@@ -1,5 +1,6 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
+import type { InboxEntry } from "./call/inbox.ts";
 import type { CallMode } from "./callModes.ts";
 import type { E2eKey } from "./e2e/crypto.ts";
 import { toBase64Url } from "./e2e/crypto.ts";
@@ -66,6 +67,15 @@ function serviceTexts(msg: Messages): Record<string, string> {
 
 export function getCallServiceStatus(): Promise<CallServiceStatus> {
   return invoke<CallServiceStatus>("plugin:call-service|get_status");
+}
+
+/**
+ * The calls the service heard of since the last take, emptying its inbox (OUTB-63); none outside
+ * the Android app.
+ */
+export async function takeServiceInbox(): Promise<InboxEntry[]> {
+  if (!isAndroidApp()) return [];
+  return (await invoke<{ entries: InboxEntry[] }>("plugin:call-service|take_inbox")).entries;
 }
 
 /** Asks for the notification permission (a no-op once answered); resolves the status after. */

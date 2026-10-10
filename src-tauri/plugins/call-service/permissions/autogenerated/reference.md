@@ -9,6 +9,7 @@ Everything the app's own page uses.
 - `allow-get-status`
 - `allow-request-notifications`
 - `allow-open-settings`
+- `allow-take-inbox`
 
 ## Permission Table
 
@@ -145,6 +146,32 @@ Enables the set_ringtone command without any pre-configured scope.
 <td>
 
 Denies the set_ringtone command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`call-service:allow-take-inbox`
+
+</td>
+<td>
+
+Enables the take_inbox command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`call-service:deny-take-inbox`
+
+</td>
+<td>
+
+Denies the take_inbox command without any pre-configured scope.
 
 </td>
 </tr>

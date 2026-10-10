@@ -355,10 +355,22 @@
           "markdownDescription": "Denies the set_ringtone command without any pre-configured scope."
         },
         {
-          "description": "Everything the app's own page uses.\n#### This default permission set includes:\n\n- `allow-configure`\n- `allow-set-ringtone`\n- `allow-get-status`\n- `allow-request-notifications`\n- `allow-open-settings`",
+          "description": "Enables the take_inbox command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-take-inbox",
+          "markdownDescription": "Enables the take_inbox command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the take_inbox command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-take-inbox",
+          "markdownDescription": "Denies the take_inbox command without any pre-configured scope."
+        },
+        {
+          "description": "Everything the app's own page uses.\n#### This default permission set includes:\n\n- `allow-configure`\n- `allow-set-ringtone`\n- `allow-get-status`\n- `allow-request-notifications`\n- `allow-open-settings`\n- `allow-take-inbox`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Everything the app's own page uses.\n#### This default permission set includes:\n\n- `allow-configure`\n- `allow-set-ringtone`\n- `allow-get-status`\n- `allow-request-notifications`\n- `allow-open-settings`"
+          "markdownDescription": "Everything the app's own page uses.\n#### This default permission set includes:\n\n- `allow-configure`\n- `allow-set-ringtone`\n- `allow-get-status`\n- `allow-request-notifications`\n- `allow-open-settings`\n- `allow-take-inbox`"
         }
       ]
     }
