@@ -696,6 +696,8 @@ export function App() {
         backgroundCalls && !!callService.status && callService.status.notifications !== "granted"
       }
       onTurnOnNotifications={callService.request}
+      popUpOff={backgroundCalls && !!callService.status && !callService.status.popUp}
+      onAllowPopUp={() => callService.open("popUp")}
       onRetry={(id) => dispatch({ type: "retryPrepare", id })}
       onDrop={dropFailed}
       onDropUnreadable={dropUnreadable}

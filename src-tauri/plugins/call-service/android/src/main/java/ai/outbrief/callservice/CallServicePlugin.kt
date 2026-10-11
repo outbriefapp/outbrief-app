@@ -141,7 +141,8 @@ class CallServicePlugin(private val activity: Activity) : Plugin(activity) {
 
   /**
    * What keeps calls from ringing in the background: `notifications` (granted / denied / prompt),
-   * `fullScreen` (may show over the lock screen), `unrestricted` (exempt from battery optimization);
+   * `fullScreen` (may show over the lock screen), `popUp` (may open the incoming-call screen over
+   * other apps, OUTB-65), `unrestricted` (exempt from battery optimization);
    * also `connected`: the service's stream is open.
    */
   @Command
@@ -166,7 +167,10 @@ class CallServicePlugin(private val activity: Activity) : Plugin(activity) {
     invoke.resolve(status())
   }
 
-  /** `{ target }`: `notifications`, `fullScreen` or `battery`, the system page that changes it. */
+  /**
+   * `{ target }`: `notifications`, `fullScreen`, `popUp` or `battery`, the system page that changes
+   * it.
+   */
   @Command
   fun openSettings(invoke: Invoke) {
     val pkg = activity.packageName
@@ -178,6 +182,11 @@ class CallServicePlugin(private val activity: Activity) : Plugin(activity) {
       }
       "fullScreen" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
         Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$pkg"))
+      } else {
+        appDetails(pkg)
+      }
+      "popUp" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$pkg"))
       } else {
         appDetails(pkg)
       }
@@ -214,6 +223,7 @@ class CallServicePlugin(private val activity: Activity) : Plugin(activity) {
     return JSObject()
       .put("notifications", notifications)
       .put("fullScreen", fullScreen)
+      .put("popUp", CallAlerts.mayPopUp(activity))
       .put("unrestricted", unrestricted)
       .put("connected", CallService.connected)
   }

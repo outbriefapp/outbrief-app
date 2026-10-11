@@ -68,6 +68,8 @@ export const zh = {
     prepareFailed: (why: string) => `汇报语音生成失败，没有来电：${why}`,
     manageModes: "管理模式…",
     notificationsOff: "通知没有打开：App 在后台或锁屏时来电不会响铃。",
+    popUpOff:
+      "来电不会主动弹出界面：允许「显示在其他应用上层」后，使用其他 App 时来电会直接弹到最前面。",
     turnOn: "去开启",
   },
 
@@ -88,6 +90,9 @@ export const zh = {
     notificationsHint: "来电要靠通知响铃、亮屏。",
     fullScreen: "锁屏来电界面",
     fullScreenHint: "锁屏时直接显示来电界面；不允许时只在通知栏提醒。",
+    popUp: "来电弹出界面",
+    popUpHint:
+      "使用其他 App 时，来电界面直接弹到最前面，像微信视频来电一样；不允许时只在屏幕顶部弹出通知。需要允许「显示在其他应用上层」，小米、OPPO、vivo 等手机还要在应用权限里允许「后台弹出界面」。",
     battery: "电池优化",
     batteryHint:
       "不受限制时系统更不容易停掉后台接收。部分手机还要在系统设置里允许 OutBrief「自启动」「后台运行」。",

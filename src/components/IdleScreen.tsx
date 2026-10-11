@@ -29,6 +29,9 @@ export function IdleScreen(props: {
   /** Android: notifications are off, so calls cannot ring in the background (OUTB-60). */
   notificationsOff: boolean;
   onTurnOnNotifications: () => void;
+  /** Android: calls cannot pop up over the app in use, only as a notification (OUTB-65). */
+  popUpOff: boolean;
+  onAllowPopUp: () => void;
   onRetry: (eventId: string) => void;
   onDrop: (eventId: string) => void;
   onDropUnreadable: (eventId: string) => void;
@@ -75,6 +78,14 @@ export function IdleScreen(props: {
         <p className="banner idle-banner">
           <span className="idle-banner-text">{msg.idle.notificationsOff}</span>
           <button type="button" className="link" onClick={props.onTurnOnNotifications}>
+            {msg.idle.turnOn}
+          </button>
+        </p>
+      )}
+      {!props.notificationsOff && props.popUpOff && (
+        <p className="banner idle-banner">
+          <span className="idle-banner-text">{msg.idle.popUpOff}</span>
+          <button type="button" className="link" onClick={props.onAllowPopUp}>
             {msg.idle.turnOn}
           </button>
         </p>
