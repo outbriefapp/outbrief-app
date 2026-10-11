@@ -122,6 +122,9 @@ object CallAlerts {
     }
   }
 
+  /** Whether a call rings now. On the main thread. */
+  fun isRinging(): Boolean = ringing.isNotEmpty()
+
   /** Another device answered or ended the call `id`: it stops ringing here. */
   fun ended(context: Context, id: String) {
     main.post {

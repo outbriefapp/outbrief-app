@@ -41,6 +41,8 @@ class CallService : Service() {
   override fun onCreate() {
     super.onCreate()
     config = CallConfig(this)
+    // Before any call rings: its notification may open the app's window over the lock screen.
+    LockScreen.watch(this)
     CallAlerts.createChannels(this, config.texts)
     goForeground()
     watchNetwork()
