@@ -11,9 +11,10 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Base64
-import android.view.WindowManager
 import android.webkit.WebView
 import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import app.tauri.PermissionState
 import app.tauri.annotation.Command
 import app.tauri.annotation.Permission
@@ -27,8 +28,8 @@ import java.io.File
 /**
  * The page's side of the call service (src/callService.ts): it hands over what the service follows
  * and rings with, asks for the notification permission and opens the system settings the service
- * depends on. It also tells the service when the page is on screen, and lets a call opened from a
- * notification show over the lock screen.
+ * depends on. It also tells the service when the page is on screen, and hands a call opened from a
+ * notification while the app is open to `LockScreen`.
  */
 @TauriPlugin(
   permissions = [
@@ -37,31 +38,27 @@ import java.io.File
 )
 class CallServicePlugin(private val activity: Activity) : Plugin(activity) {
   private val config = CallConfig(activity)
-  /** The window shows over the lock screen for a call opened from its notification. */
-  private var overLockScreen = false
 
   override fun load(webView: WebView) {
     super.load(webView)
     // Tauri's own lifecycle hooks (Plugin.onPause / onResume) are never called: its generated
     // TauriLifecycleObserver is not registered. The activity's callbacks tell when the page is on
     // screen instead.
-    activity.application.registerActivityLifecycleCallbacks(Lifecycle())
-    shown()
-    showCall(activity.intent)
+    activity.application.registerActivityLifecycleCallbacks(OnScreen())
+    LockScreen.watch(activity)
+    // The webview may load only after the app left the screen (a cold start, then the phone locked
+    // at once): the page is not on screen then, and the service rings (OUTB-67).
+    val state = (activity as? LifecycleOwner)?.lifecycle?.currentState
+    if (state?.isAtLeast(Lifecycle.State.RESUMED) != false) shown()
   }
 
-  private inner class Lifecycle : Application.ActivityLifecycleCallbacks {
+  private inner class OnScreen : Application.ActivityLifecycleCallbacks {
     override fun onActivityResumed(a: Activity) {
       if (a === activity) shown()
     }
 
     override fun onActivityPaused(a: Activity) {
       if (a === activity) AppState.foreground = false
-    }
-
-    override fun onActivityStopped(a: Activity) {
-      // Once the call is over and the app left, it is behind the lock screen again.
-      if (a === activity && overLockScreen) setOverLockScreen(false)
     }
 
     override fun onActivityDestroyed(a: Activity) {
@@ -72,31 +69,15 @@ class CallServicePlugin(private val activity: Activity) : Plugin(activity) {
 
     override fun onActivityCreated(a: Activity, state: Bundle?) {}
     override fun onActivityStarted(a: Activity) {}
+    override fun onActivityStopped(a: Activity) {}
     override fun onActivitySaveInstanceState(a: Activity, state: Bundle) {}
   }
 
-  override fun onNewIntent(intent: Intent) = showCall(intent)
+  override fun onNewIntent(intent: Intent) = LockScreen.newIntent(activity, intent)
 
   private fun shown() {
     AppState.foreground = true
     CallAlerts.appShown(activity)
-  }
-
-  private fun showCall(intent: Intent?) {
-    if (intent?.hasExtra(CallAlerts.EXTRA_CALL) == true) setOverLockScreen(true)
-  }
-
-  @Suppress("DEPRECATION")
-  private fun setOverLockScreen(on: Boolean) {
-    overLockScreen = on
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-      activity.setShowWhenLocked(on)
-      activity.setTurnScreenOn(on)
-    } else {
-      val flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-      if (on) activity.window.addFlags(flags) else activity.window.clearFlags(flags)
-    }
   }
 
   /**
